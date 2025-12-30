@@ -39,12 +39,22 @@
                             $activeLoans = $activeCounts[$asset->id] ?? 0;
                             $available = max($asset->jumlah - $activeLoans, 0);
                             $isScheduled = in_array($asset->id, $scheduledIds ?? [], true);
-                            $statusLabel = $available <= 0 ? 'Digunakan' : ($isScheduled ? 'Terjadwal' : 'Tersedia');
                         @endphp
                         <tr>
                             <td>{{ $asset->nama_aset }}</td>
                             <td>{{ $asset->kategori ?? '-' }}</td>
-                            <td><span class="badge">{{ $statusLabel }}</span></td>
+                            <td>
+                                @if($isScheduled)
+                                    <span class="badge">Terjadwal</span>
+                                    @if($available > 0)
+                                        <span class="badge">Tersedia</span>
+                                    @endif
+                                @elseif($available <= 0)
+                                    <span class="badge">Digunakan</span>
+                                @else
+                                    <span class="badge">Tersedia</span>
+                                @endif
+                            </td>
                             <td>{{ $available }}</td>
                             <td>
                                 @if(auth()->user()->role === 'admin')
@@ -58,10 +68,8 @@
                                         </form>
                                     </div>
                                 @else
-                                    @if($available > 0 && !$isScheduled)
+                                    @if($available > 0)
                                         <a class="btn btn-outline" href="{{ route('loans.create', ['asset_id' => $asset->id]) }}">Gunakan Alat</a>
-                                    @elseif($isScheduled)
-                                        <span style="color:var(--muted);">Terjadwal</span>
                                     @else
                                         <span style="color:var(--muted);">Tidak tersedia</span>
                                     @endif

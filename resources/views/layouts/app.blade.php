@@ -293,7 +293,7 @@
                 <div class="brand">{{ config('app.name') }}</div>
                 <div class="nav-links">
                     <a href="{{ route('dashboard') }}">Dashboard</a>
-                    <a href="{{ route('assets.index') }}">Kelola Alat</a>
+                    <a href="{{ route('assets.index') }}">Data Alat</a>
                     <a href="{{ route('jadwal.index') }}">Jadwal</a>
                     <a href="{{ route('loans.index') }}">Pengembalian Alat</a>
                 </div>

@@ -2,12 +2,9 @@
 
 @section('content')
     <div class="card">
-        <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px;">
-            <div>
-                <h2 style="margin-top:0;">Laporan &amp; Penggunaan Alat</h2>
-                <p style="color:var(--muted);">Ekspor data CSV dan pantau penggunaan alat.</p>
-            </div>
-            <a class="btn" href="{{ route('loans.create') }}">Tambah Penggunaan</a>
+        <div>
+            <h2 style="margin-top:0;">Laporan &amp; Penggunaan Alat</h2>
+            <p style="color:var(--muted);">Ekspor data CSV dan pantau penggunaan alat.</p>
         </div>
 
         <div style="overflow-x:auto; margin-top:12px;">

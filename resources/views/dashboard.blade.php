@@ -92,9 +92,19 @@
                                     $activeLoans = $activeCounts[$asset->id] ?? 0;
                                     $available = max($asset->jumlah - $activeLoans, 0);
                                     $isScheduled = in_array($asset->id, $scheduledIds ?? [], true);
-                                    $statusLabel = $available <= 0 ? 'Digunakan' : ($isScheduled ? 'Terjadwal' : 'Tersedia');
                                 @endphp
-                                <td><span class="badge">{{ $statusLabel }}</span></td>
+                                <td>
+                                    @if($isScheduled)
+                                        <span class="badge">Terjadwal</span>
+                                        @if($available > 0)
+                                            <span class="badge">Tersedia</span>
+                                        @endif
+                                    @elseif($available <= 0)
+                                        <span class="badge">Digunakan</span>
+                                    @else
+                                        <span class="badge">Tersedia</span>
+                                    @endif
+                                </td>
                                 <td>{{ $available }}</td>
                             </tr>
                         @empty

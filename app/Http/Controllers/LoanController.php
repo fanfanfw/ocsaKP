@@ -73,12 +73,6 @@ class LoanController extends Controller
             ])->withInput();
         }
 
-        if ($scheduleStatus->isScheduled($asset->id, $scheduledIds)) {
-            return back()->withErrors([
-                'asset_id' => 'Aset sedang terjadwal dan tidak bisa digunakan saat ini.',
-            ])->withInput();
-        }
-
         $userId = Auth::id();
         if (Auth::user()->role === 'admin' && !empty($validated['user_id'])) {
             $userId = (int) $validated['user_id'];

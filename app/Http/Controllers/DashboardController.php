@@ -30,10 +30,10 @@ class DashboardController extends Controller
 
         foreach ($assets as $asset) {
             $available = max($asset->jumlah - ($activeCounts[$asset->id] ?? 0), 0);
-            if ($available <= 0) {
-                $statusCounts['Dipinjam']++;
-            } elseif ($scheduleStatus->isScheduled($asset->id, $scheduledIds)) {
+            if ($scheduleStatus->isScheduled($asset->id, $scheduledIds)) {
                 $statusCounts['Terjadwal']++;
+            } elseif ($available <= 0) {
+                $statusCounts['Dipinjam']++;
             } else {
                 $statusCounts['Tersedia']++;
             }
