@@ -24,11 +24,14 @@
                     <option value="">Pilih Alat</option>
                     @foreach($assets as $asset)
                         @php
-                            $used = $activeCounts[$asset->id] ?? 0;
-                            $available = max($asset->jumlah - $used, 0);
+                            $activeLoans = $activeCounts[$asset->id] ?? 0;
+                            $available = max($asset->jumlah - $activeLoans, 0);
+                            $isScheduled = in_array($asset->id, $scheduledIds ?? [], true);
+                            $disabled = $available <= 0 || $isScheduled;
+                            $note = $isScheduled ? 'Terjadwal' : 'Tersedia: ' . $available;
                         @endphp
-                        <option value="{{ $asset->id }}" @selected(old('asset_id') == $asset->id) @disabled($available === 0)>
-                            {{ $asset->nama_aset }} (Tersedia: {{ $available }})
+                        <option value="{{ $asset->id }}" @selected(old('asset_id', $selectedAssetId) == $asset->id) @disabled($disabled)>
+                            {{ $asset->nama_aset }} ({{ $note }})
                         </option>
                     @endforeach
                 </select>

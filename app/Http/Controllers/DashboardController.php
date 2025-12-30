@@ -5,20 +5,42 @@ namespace App\Http\Controllers;
 use App\Models\Asset;
 use App\Models\Loan;
 use App\Models\Maintenance;
+use App\Services\ScheduleStatusService;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        $totalAssets = Asset::count();
-        $availableAssets = Asset::where('status', 'Tersedia')->count();
-        $scheduledAssets = Asset::where('status', 'Terjadwal')->count();
+        $totalAssets = Asset::sum('jumlah');
         $activeLoans = Loan::where('status', 'Dipinjam')->count();
         $maintenanceOpen = Maintenance::whereNull('tanggal_selesai')->count();
+        $assets = Asset::orderBy('nama_aset')->get();
+        $scheduleStatus = app(ScheduleStatusService::class);
+        $scheduledIds = $scheduleStatus->currentScheduledAssetIds();
+        $activeCounts = Loan::selectRaw('asset_id, COUNT(*) as total')
+            ->where('status', 'Dipinjam')
+            ->groupBy('asset_id')
+            ->pluck('total', 'asset_id');
 
-        $statusCounts = Asset::selectRaw('status, COUNT(*) as total')
-            ->groupBy('status')
-            ->pluck('total', 'status');
+        $statusCounts = [
+            'Tersedia' => 0,
+            'Terjadwal' => 0,
+            'Dipinjam' => 0,
+        ];
+
+        foreach ($assets as $asset) {
+            $available = max($asset->jumlah - ($activeCounts[$asset->id] ?? 0), 0);
+            if ($available <= 0) {
+                $statusCounts['Dipinjam']++;
+            } elseif ($scheduleStatus->isScheduled($asset->id, $scheduledIds)) {
+                $statusCounts['Terjadwal']++;
+            } else {
+                $statusCounts['Tersedia']++;
+            }
+        }
+
+        $availableAssets = $statusCounts['Tersedia'];
+        $scheduledAssets = $statusCounts['Terjadwal'];
 
         return view('dashboard', [
             'totalAssets' => $totalAssets,
@@ -27,6 +49,9 @@ class DashboardController extends Controller
             'activeLoans' => $activeLoans,
             'maintenanceOpen' => $maintenanceOpen,
             'statusCounts' => $statusCounts,
+            'assets' => $assets,
+            'scheduledIds' => $scheduledIds,
+            'activeCounts' => $activeCounts,
         ]);
     }
 }

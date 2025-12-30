@@ -15,22 +15,6 @@
                 <input type="text" name="kategori" value="{{ old('kategori', $asset->kategori) }}">
             </div>
             <div class="form-group">
-                <label>Status</label>
-                <select name="status">
-                    @foreach(['Tersedia','Terjadwal','Dipinjam'] as $status)
-                        <option value="{{ $status }}" @selected(old('status', $asset->status) === $status)>{{ $status }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Tahun</label>
-                <input type="number" name="tahun" value="{{ old('tahun', $asset->tahun) }}">
-            </div>
-            <div class="form-group">
-                <label>Harga</label>
-                <input type="number" name="harga" value="{{ old('harga', $asset->harga) }}">
-            </div>
-            <div class="form-group">
                 <label>Jumlah</label>
                 <input type="number" name="jumlah" min="1" value="{{ old('jumlah', $asset->jumlah) }}">
             </div>

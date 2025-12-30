@@ -20,7 +20,6 @@
                         <th>Tanggal Kembali</th>
                         <th>Status</th>
                         <th>Bukti Kembali</th>
-                        <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -38,17 +37,10 @@
                                     <span style="color:var(--muted);">-</span>
                                 @endif
                             </td>
-                            <td>
-                                @if($loan->status === 'Dipinjam')
-                                    <a class="btn btn-outline" href="{{ route('loans.return', $loan) }}">Pengembalian</a>
-                                @else
-                                    <span style="color:var(--muted);">Selesai</span>
-                                @endif
-                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" style="text-align:center; color:var(--muted);">Belum ada data penggunaan.</td>
+                            <td colspan="6" style="text-align:center; color:var(--muted);">Belum ada data penggunaan.</td>
                         </tr>
                     @endforelse
                 </tbody>

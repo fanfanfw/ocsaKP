@@ -52,6 +52,23 @@ class JadwalController extends Controller
         return $hari . ', ' . $date->format('d/m/Y');
     }
 
+    private function hariFromDate(string $tanggal): string
+    {
+        $map = [
+            'Monday' => 'Senin',
+            'Tuesday' => 'Selasa',
+            'Wednesday' => 'Rabu',
+            'Thursday' => 'Kamis',
+            'Friday' => 'Jumat',
+            'Saturday' => 'Sabtu',
+            'Sunday' => 'Minggu',
+        ];
+
+        $englishDay = Carbon::parse($tanggal)->englishDayOfWeek;
+
+        return $map[$englishDay] ?? 'Senin';
+    }
+
     public function create()
     {
         return view('jadwal.create', [
@@ -63,15 +80,17 @@ class JadwalController extends Controller
     {
         $validated = $request->validate([
             'asset_id' => ['required', 'exists:assets,id'],
-            'hari' => ['required', 'in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu,Minggu'],
+            'tanggal' => ['required', 'date'],
             'jam_mulai' => ['required', 'date_format:H:i'],
             'jam_selesai' => ['required', 'date_format:H:i', 'after:jam_mulai'],
             'keterangan' => ['nullable', 'string', 'max:255'],
         ]);
 
+        $hari = $this->hariFromDate($validated['tanggal']);
+
         Jadwal::create([
             'asset_id' => $validated['asset_id'],
-            'hari' => $validated['hari'],
+            'hari' => $hari,
             'jam_mulai' => $validated['jam_mulai'],
             'jam_selesai' => $validated['jam_selesai'],
             'keterangan' => $validated['keterangan'] ?? null,

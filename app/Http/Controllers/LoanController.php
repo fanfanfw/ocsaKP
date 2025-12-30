@@ -6,6 +6,7 @@ use App\Models\Asset;
 use App\Models\AssetStatusLog;
 use App\Models\Loan;
 use App\Models\User;
+use App\Services\ScheduleStatusService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -29,11 +30,13 @@ class LoanController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $assets = Asset::orderBy('nama_aset')->get();
         $tentor = User::where('role', 'tentor')->orderBy('name')->get();
-
+        $selectedAssetId = $request->input('asset_id');
+        $scheduleStatus = app(ScheduleStatusService::class);
+        $scheduledIds = $scheduleStatus->currentScheduledAssetIds();
         $activeCounts = Loan::selectRaw('asset_id, COUNT(*) as total')
             ->where('status', 'Dipinjam')
             ->groupBy('asset_id')
@@ -41,8 +44,10 @@ class LoanController extends Controller
 
         return view('loans.create', [
             'assets' => $assets,
-            'activeCounts' => $activeCounts,
             'tentor' => $tentor,
+            'selectedAssetId' => $selectedAssetId,
+            'scheduledIds' => $scheduledIds,
+            'activeCounts' => $activeCounts,
         ]);
     }
 
@@ -55,14 +60,22 @@ class LoanController extends Controller
         ]);
 
         $asset = Asset::findOrFail($validated['asset_id']);
-
+        $scheduleStatus = app(ScheduleStatusService::class);
+        $scheduledIds = $scheduleStatus->currentScheduledAssetIds();
         $activeLoans = Loan::where('asset_id', $asset->id)
             ->where('status', 'Dipinjam')
             ->count();
+        $available = $asset->jumlah - $activeLoans;
 
-        if ($activeLoans >= $asset->jumlah) {
+        if ($available < 1) {
             return back()->withErrors([
                 'asset_id' => 'Aset sedang tidak tersedia untuk dipinjam.',
+            ])->withInput();
+        }
+
+        if ($scheduleStatus->isScheduled($asset->id, $scheduledIds)) {
+            return back()->withErrors([
+                'asset_id' => 'Aset sedang terjadwal dan tidak bisa digunakan saat ini.',
             ])->withInput();
         }
 
@@ -119,7 +132,9 @@ class LoanController extends Controller
             'bukti_kembali' => $filename ?? $loan->bukti_kembali,
         ]);
 
-        $this->syncAssetStatus($loan->asset);
+        if ($loan->asset) {
+            $this->syncAssetStatus($loan->asset);
+        }
 
         return redirect()->route('loans.index')->with('success', 'Penggunaan berhasil dikembalikan.');
     }
@@ -140,7 +155,6 @@ class LoanController extends Controller
         $activeLoans = Loan::where('asset_id', $asset->id)
             ->where('status', 'Dipinjam')
             ->count();
-
         $newStatus = $activeLoans >= $asset->jumlah ? 'Dipinjam' : 'Tersedia';
 
         if ($asset->status !== $newStatus) {

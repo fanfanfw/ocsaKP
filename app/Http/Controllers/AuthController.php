@@ -12,12 +12,16 @@ class AuthController extends Controller
 {
     public function showLogin()
     {
+        if (Auth::check()) {
+            return redirect()->route('dashboard');
+        }
+
         return view('auth.login');
     }
 
     public function login(Request $request)
     {
-        $validated = $request->validate([
+        $validated = $request->validateWithBag('login', [
             'username' => ['required', 'string'],
             'password' => ['required', 'string'],
         ]);
@@ -27,13 +31,45 @@ class AuthController extends Controller
         if (!$user || !$this->passwordMatches($user->password, $validated['password'])) {
             return back()->withErrors([
                 'username' => 'Username atau kata sandi tidak sesuai.',
-            ])->onlyInput('username');
+            ], 'login')->onlyInput('username');
         }
 
         if (!$this->isModernHash($user->password)) {
             $user->password = Hash::make($validated['password']);
             $user->save();
         }
+
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        return redirect()->route('dashboard');
+    }
+
+    public function showRegister()
+    {
+        if (Auth::check()) {
+            return redirect()->route('dashboard');
+        }
+
+        return view('auth.register');
+    }
+
+    public function register(Request $request)
+    {
+        $validated = $request->validateWithBag('register', [
+            'username' => ['required', 'string', 'max:100', 'unique:users,username'],
+            'name' => ['nullable', 'string', 'max:150'],
+            'role' => ['required', 'in:admin,tentor'],
+            'password' => ['required', 'string', 'min:4', 'confirmed'],
+        ]);
+
+        $user = User::create([
+            'username' => $validated['username'],
+            'name' => $validated['name'] ?? null,
+            'role' => $validated['role'],
+            'password' => Hash::make($validated['password']),
+            'created_at' => now(),
+        ]);
 
         Auth::login($user);
         $request->session()->regenerate();

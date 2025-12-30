@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Masuk - {{ config('app.name') }}</title>
+    <title>Registrasi - {{ config('app.name') }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -31,6 +31,7 @@
             padding: 28px;
             width: min(420px, 100%);
             box-shadow: 0 10px 25px rgba(15, 40, 28, 0.08);
+            margin: 0 auto;
         }
         h1 {
             margin: 0 0 6px;
@@ -45,13 +46,14 @@
             font-weight: 600;
             font-size: 14px;
         }
-        input {
+        input, select {
             width: 100%;
             padding: 10px 12px;
             border-radius: 10px;
             border: 1px solid var(--border);
             margin-top: 6px;
             font-size: 14px;
+            font-family: inherit;
         }
         .field {
             margin-bottom: 12px;
@@ -111,28 +113,44 @@
     </style>
 </head>
 <body>
-    <div class="card" style="margin: 0 auto;">
-        <div style="font-size:28px; font-weight:700; margin-bottom:8px;">{{ config('app.name') }}</div>
-        <h1>Masuk</h1>
-        <p>Gunakan akun admin atau tentor untuk mengakses sistem.</p>
-        @if($errors->login->any())
-            <div class="error">{{ $errors->login->first() }}</div>
+    <div class="card">
+        <h1>Registrasi</h1>
+        <p>Buat akun baru sebagai admin atau tentor.</p>
+        @if($errors->register->any())
+            <div class="error">{{ $errors->register->first() }}</div>
         @endif
-        <form method="POST" action="{{ route('login.process') }}">
+        <form method="POST" action="{{ route('register.process') }}">
             @csrf
             <div class="field">
-                <label for="login_username">Username</label>
-                <input id="login_username" name="username" type="text" value="{{ old('username') }}" required>
+                <label for="register_username">Username</label>
+                <input id="register_username" name="username" type="text" value="{{ old('username') }}" required>
+            </div>
+            <div class="field">
+                <label for="register_name">Nama</label>
+                <input id="register_name" name="name" type="text" value="{{ old('name') }}">
+            </div>
+            <div class="field">
+                <label for="register_role">Role</label>
+                <select id="register_role" name="role" required>
+                    <option value="">Pilih Role</option>
+                    <option value="admin" @selected(old('role') === 'admin')>Admin</option>
+                    <option value="tentor" @selected(old('role') === 'tentor')>Tentor</option>
+                </select>
             </div>
             <div class="field password-field">
-                <label for="login_password">Kata sandi</label>
-                <input id="login_password" name="password" type="password" required>
-                <button class="toggle-btn" type="button" data-target="login_password">Lihat</button>
+                <label for="register_password">Kata sandi</label>
+                <input id="register_password" name="password" type="password" required>
+                <button class="toggle-btn" type="button" data-target="register_password">Lihat</button>
             </div>
-            <button class="btn" type="submit">Masuk</button>
+            <div class="field password-field">
+                <label for="register_password_confirmation">Ulangi kata sandi</label>
+                <input id="register_password_confirmation" name="password_confirmation" type="password" required>
+                <button class="toggle-btn" type="button" data-target="register_password_confirmation">Lihat</button>
+            </div>
+            <button class="btn" type="submit">Daftar</button>
         </form>
         <div style="margin-top:12px;">
-            <a class="btn-outline" href="{{ route('register') }}">Daftar Akun Baru</a>
+            <a class="btn-outline" href="{{ route('login') }}">Kembali ke Login</a>
         </div>
     </div>
     <script>

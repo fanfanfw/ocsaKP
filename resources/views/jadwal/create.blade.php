@@ -15,12 +15,8 @@
                 </select>
             </div>
             <div class="form-group">
-                <label>Hari</label>
-                <select name="hari" required>
-                    @foreach(['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu'] as $hari)
-                        <option value="{{ $hari }}" @selected(old('hari') === $hari)>{{ $hari }}</option>
-                    @endforeach
-                </select>
+                <label>Tanggal</label>
+                <input type="date" name="tanggal" value="{{ old('tanggal') }}" required>
             </div>
             <div class="form-group">
                 <label>Jam Mulai</label>

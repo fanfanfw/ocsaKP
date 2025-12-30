@@ -30,20 +30,24 @@
                         <th>Kategori</th>
                         <th>Status</th>
                         <th>Jumlah</th>
-                        @if(auth()->user()->role === 'admin')
-                            <th>Aksi</th>
-                        @endif
+                        <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($assets as $asset)
+                        @php
+                            $activeLoans = $activeCounts[$asset->id] ?? 0;
+                            $available = max($asset->jumlah - $activeLoans, 0);
+                            $isScheduled = in_array($asset->id, $scheduledIds ?? [], true);
+                            $statusLabel = $available <= 0 ? 'Digunakan' : ($isScheduled ? 'Terjadwal' : 'Tersedia');
+                        @endphp
                         <tr>
                             <td>{{ $asset->nama_aset }}</td>
                             <td>{{ $asset->kategori ?? '-' }}</td>
-                            <td><span class="badge">{{ $asset->status === 'Dipinjam' ? 'Digunakan' : ($asset->status ?? '-') }}</span></td>
-                            <td>{{ $asset->jumlah }}</td>
-                            @if(auth()->user()->role === 'admin')
-                                <td>
+                            <td><span class="badge">{{ $statusLabel }}</span></td>
+                            <td>{{ $available }}</td>
+                            <td>
+                                @if(auth()->user()->role === 'admin')
                                     <div class="actions">
                                         <a class="btn btn-outline" href="{{ route('assets.parts.index', $asset) }}">Part</a>
                                         <a class="btn btn-outline" href="{{ route('assets.edit', $asset) }}">Edit</a>
@@ -53,12 +57,20 @@
                                             <button class="btn btn-danger" type="submit">Hapus</button>
                                         </form>
                                     </div>
-                                </td>
-                            @endif
+                                @else
+                                    @if($available > 0 && !$isScheduled)
+                                        <a class="btn btn-outline" href="{{ route('loans.create', ['asset_id' => $asset->id]) }}">Gunakan Alat</a>
+                                    @elseif($isScheduled)
+                                        <span style="color:var(--muted);">Terjadwal</span>
+                                    @else
+                                        <span style="color:var(--muted);">Tidak tersedia</span>
+                                    @endif
+                                @endif
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ auth()->user()->role === 'admin' ? 5 : 4 }}" style="text-align:center; color:var(--muted);">Belum ada data alat.</td>
+                            <td colspan="5" style="text-align:center; color:var(--muted);">Belum ada data alat.</td>
                         </tr>
                     @endforelse
                 </tbody>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Asset;
 use App\Models\AssetStatusLog;
+use App\Services\ScheduleStatusService;
 use Illuminate\Http\Request;
 
 class AssetController extends Controller
@@ -22,9 +23,17 @@ class AssetController extends Controller
         }
 
         $assets = $query->orderBy('nama_aset')->paginate(15)->withQueryString();
+        $scheduleStatus = app(ScheduleStatusService::class);
+        $scheduledIds = $scheduleStatus->currentScheduledAssetIds();
+        $activeCounts = \App\Models\Loan::selectRaw('asset_id, COUNT(*) as total')
+            ->where('status', 'Dipinjam')
+            ->groupBy('asset_id')
+            ->pluck('total', 'asset_id');
 
         return view('assets.index', [
             'assets' => $assets,
+            'scheduledIds' => $scheduledIds,
+            'activeCounts' => $activeCounts,
         ]);
     }
 
@@ -38,18 +47,15 @@ class AssetController extends Controller
         $validated = $request->validate([
             'nama_aset' => ['required', 'string', 'max:255'],
             'kategori' => ['nullable', 'string', 'max:100'],
-            'status' => ['nullable', 'string', 'max:50'],
-            'tahun' => ['nullable', 'integer'],
-            'harga' => ['nullable', 'integer', 'min:0'],
             'jumlah' => ['nullable', 'integer', 'min:1'],
         ]);
 
         $asset = Asset::create([
             'nama_aset' => $validated['nama_aset'],
             'kategori' => $validated['kategori'] ?? null,
-            'status' => $validated['status'] ?? 'Tersedia',
-            'tahun' => $validated['tahun'] ?? null,
-            'harga' => $validated['harga'] ?? null,
+            'status' => 'Tersedia',
+            'tahun' => null,
+            'harga' => null,
             'jumlah' => $validated['jumlah'] ?? 1,
         ]);
 
@@ -70,26 +76,14 @@ class AssetController extends Controller
         $validated = $request->validate([
             'nama_aset' => ['required', 'string', 'max:255'],
             'kategori' => ['nullable', 'string', 'max:100'],
-            'status' => ['nullable', 'string', 'max:50'],
-            'tahun' => ['nullable', 'integer'],
-            'harga' => ['nullable', 'integer', 'min:0'],
             'jumlah' => ['nullable', 'integer', 'min:1'],
         ]);
-
-        $oldStatus = $asset->status;
 
         $asset->update([
             'nama_aset' => $validated['nama_aset'],
             'kategori' => $validated['kategori'] ?? null,
-            'status' => $validated['status'] ?? 'Tersedia',
-            'tahun' => $validated['tahun'] ?? null,
-            'harga' => $validated['harga'] ?? null,
             'jumlah' => $validated['jumlah'] ?? 1,
         ]);
-
-        if ($oldStatus !== $asset->status) {
-            $this->logStatus($asset, $asset->status);
-        }
 
         return redirect()->route('assets.index')->with('success', 'Aset berhasil diperbarui.');
     }

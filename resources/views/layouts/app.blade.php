@@ -35,6 +35,49 @@
             top: 0;
             z-index: 10;
         }
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: 240px;
+            background: #0f3b2a;
+            color: #e8f5ef;
+            padding: 24px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        .sidebar .brand {
+            color: #e8f5ef;
+        }
+        .sidebar a {
+            color: #e8f5ef;
+            text-decoration: none;
+            padding: 10px 12px;
+            border-radius: 10px;
+            display: block;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .sidebar a:hover {
+            background: rgba(232, 245, 239, 0.12);
+        }
+        .sidebar .user-info {
+            color: #d3e7dd;
+            font-size: 13px;
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .sidebar .badge {
+            background: rgba(255, 255, 255, 0.16);
+            color: #e8f5ef;
+        }
+        .content {
+            flex: 1;
+        }
         .nav {
             max-width: 1200px;
             margin: 0 auto;
@@ -191,48 +234,95 @@
                 width: 100%;
                 justify-content: space-between;
             }
+            .layout {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .sidebar .user-info {
+                width: 100%;
+                align-items: flex-start;
+            }
         }
     </style>
 </head>
 <body>
-    <header>
-        <div class="nav">
-            <div class="brand">{{ config('app.name') }}</div>
-            <div class="nav-links">
+    @if(auth()->user()->role === 'admin')
+        <div class="layout">
+            <aside class="sidebar">
+                <div class="brand">{{ config('app.name') }}</div>
                 <a href="{{ route('dashboard') }}">Dashboard</a>
                 <a href="{{ route('assets.index') }}">Kelola Alat</a>
                 <a href="{{ route('jadwal.index') }}">Jadwal</a>
-                @if(auth()->user()->role === 'admin')
-                    <a href="{{ route('reports.index') }}">Laporan</a>
-                @else
-                    <a href="{{ route('loans.index') }}">Penggunaan Alat</a>
-                @endif
-            </div>
-            <div class="user-info">
-                <span>{{ auth()->user()->name ?? auth()->user()->username }}</span>
-                <span class="badge">{{ strtoupper(auth()->user()->role) }}</span>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button class="btn btn-outline" type="submit">Keluar</button>
-                </form>
+                <a href="{{ route('maintenance.index') }}">Perawatan</a>
+                <a href="{{ route('reports.index') }}">Laporan</a>
+                <div class="user-info">
+                    <div>{{ auth()->user()->name ?? auth()->user()->username }}</div>
+                    <span class="badge">{{ strtoupper(auth()->user()->role) }}</span>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button class="btn btn-outline" type="submit">Keluar</button>
+                    </form>
+                </div>
+            </aside>
+            <div class="content">
+                <main class="container">
+                    @if(session('success'))
+                        <div class="alert alert-success">{{ session('success') }}</div>
+                    @endif
+                    @if($errors->any())
+                        <div class="alert alert-error">
+                            <ul style="margin: 0; padding-left: 18px;">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+                    @yield('content')
+                </main>
             </div>
         </div>
-    </header>
-
-    <main class="container">
-        @if(session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
-        @endif
-        @if($errors->any())
-            <div class="alert alert-error">
-                <ul style="margin: 0; padding-left: 18px;">
-                    @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
+    @else
+        <header>
+            <div class="nav">
+                <div class="brand">{{ config('app.name') }}</div>
+                <div class="nav-links">
+                    <a href="{{ route('dashboard') }}">Dashboard</a>
+                    <a href="{{ route('assets.index') }}">Kelola Alat</a>
+                    <a href="{{ route('jadwal.index') }}">Jadwal</a>
+                    <a href="{{ route('loans.index') }}">Pengembalian Alat</a>
+                </div>
+                <div class="user-info">
+                    <span>{{ auth()->user()->name ?? auth()->user()->username }}</span>
+                    <span class="badge">{{ strtoupper(auth()->user()->role) }}</span>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button class="btn btn-outline" type="submit">Keluar</button>
+                    </form>
+                </div>
             </div>
-        @endif
-        @yield('content')
-    </main>
+        </header>
+
+        <main class="container">
+            @if(session('success'))
+                <div class="alert alert-success">{{ session('success') }}</div>
+            @endif
+            @if($errors->any())
+                <div class="alert alert-error">
+                    <ul style="margin: 0; padding-left: 18px;">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+            @yield('content')
+        </main>
+    @endif
 </body>
 </html>
