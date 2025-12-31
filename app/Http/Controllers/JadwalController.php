@@ -4,14 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Asset;
 use App\Models\Jadwal;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\Rule;
 
 class JadwalController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Jadwal::with('asset');
+        $query = Jadwal::with(['asset', 'user']);
 
         if ($request->filled('hari')) {
             $query->where('hari', $request->input('hari'));
@@ -52,6 +54,29 @@ class JadwalController extends Controller
         return $hari . ', ' . $date->format('d/m/Y');
     }
 
+    private function dateFromHari(string $hari): string
+    {
+        $map = [
+            'Senin' => 'Monday',
+            'Selasa' => 'Tuesday',
+            'Rabu' => 'Wednesday',
+            'Kamis' => 'Thursday',
+            'Jumat' => 'Friday',
+            'Sabtu' => 'Saturday',
+            'Minggu' => 'Sunday',
+        ];
+
+        if (!isset($map[$hari])) {
+            return Carbon::now()->format('Y-m-d');
+        }
+
+        $today = Carbon::now();
+        $target = $map[$hari];
+        $date = $today->englishDayOfWeek === $target ? $today : $today->next($target);
+
+        return $date->format('Y-m-d');
+    }
+
     private function hariFromDate(string $tanggal): string
     {
         $map = [
@@ -73,6 +98,7 @@ class JadwalController extends Controller
     {
         return view('jadwal.create', [
             'assets' => Asset::orderBy('nama_aset')->get(),
+            'tentor' => User::where('role', 'tentor')->orderBy('name')->get(),
         ]);
     }
 
@@ -80,6 +106,10 @@ class JadwalController extends Controller
     {
         $validated = $request->validate([
             'asset_id' => ['required', 'exists:assets,id'],
+            'user_id' => [
+                'required',
+                Rule::exists('users', 'id')->where('role', 'tentor'),
+            ],
             'tanggal' => ['required', 'date'],
             'jam_mulai' => ['required', 'date_format:H:i'],
             'jam_selesai' => ['required', 'date_format:H:i', 'after:jam_mulai'],
@@ -90,6 +120,7 @@ class JadwalController extends Controller
 
         Jadwal::create([
             'asset_id' => $validated['asset_id'],
+            'user_id' => $validated['user_id'],
             'hari' => $hari,
             'jam_mulai' => $validated['jam_mulai'],
             'jam_selesai' => $validated['jam_selesai'],
@@ -104,6 +135,8 @@ class JadwalController extends Controller
         return view('jadwal.edit', [
             'jadwal' => $jadwal,
             'assets' => Asset::orderBy('nama_aset')->get(),
+            'tentor' => User::where('role', 'tentor')->orderBy('name')->get(),
+            'tanggal' => $this->dateFromHari($jadwal->hari),
         ]);
     }
 
@@ -111,15 +144,22 @@ class JadwalController extends Controller
     {
         $validated = $request->validate([
             'asset_id' => ['required', 'exists:assets,id'],
-            'hari' => ['required', 'in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu,Minggu'],
+            'user_id' => [
+                'required',
+                Rule::exists('users', 'id')->where('role', 'tentor'),
+            ],
+            'tanggal' => ['required', 'date'],
             'jam_mulai' => ['required', 'date_format:H:i'],
             'jam_selesai' => ['required', 'date_format:H:i', 'after:jam_mulai'],
             'keterangan' => ['nullable', 'string', 'max:255'],
         ]);
 
+        $hari = $this->hariFromDate($validated['tanggal']);
+
         $jadwal->update([
             'asset_id' => $validated['asset_id'],
-            'hari' => $validated['hari'],
+            'user_id' => $validated['user_id'],
+            'hari' => $hari,
             'jam_mulai' => $validated['jam_mulai'],
             'jam_selesai' => $validated['jam_selesai'],
             'keterangan' => $validated['keterangan'] ?? null,

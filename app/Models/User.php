@@ -47,4 +47,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Loan::class);
     }
+
+    public function jadwal()
+    {
+        return $this->hasMany(Jadwal::class);
+    }
 }

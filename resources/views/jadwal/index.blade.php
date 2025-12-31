@@ -32,6 +32,7 @@
                 <thead>
                     <tr>
                         <th>Alat</th>
+                        <th>Tentor</th>
                         <th>Hari &amp; Tanggal</th>
                         <th>Jam</th>
                         <th>Keterangan</th>
@@ -44,6 +45,7 @@
                     @forelse($jadwal as $item)
                         <tr>
                             <td>{{ $item->asset?->nama_aset ?? '-' }}</td>
+                            <td>{{ $item->user?->name ?? $item->user?->username ?? '-' }}</td>
                             <td>{{ $item->hari_tanggal ?? $item->hari }}</td>
                             <td>{{ $item->jam_mulai }} - {{ $item->jam_selesai }}</td>
                             <td>{{ $item->keterangan ?? '-' }}</td>
@@ -62,7 +64,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ auth()->user()->role === 'admin' ? 5 : 4 }}" style="text-align:center; color:var(--muted);">Belum ada jadwal.</td>
+                            <td colspan="{{ auth()->user()->role === 'admin' ? 6 : 5 }}" style="text-align:center; color:var(--muted);">Belum ada jadwal.</td>
                         </tr>
                     @endforelse
                 </tbody>

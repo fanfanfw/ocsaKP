@@ -15,20 +15,26 @@
                 </select>
             </div>
             <div class="form-group">
-                <label>Hari</label>
-                <select name="hari" required>
-                    @foreach(['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu'] as $hari)
-                        <option value="{{ $hari }}" @selected(old('hari', $jadwal->hari) === $hari)>{{ $hari }}</option>
+                <label>Tentor</label>
+                <select name="user_id" required>
+                    @foreach($tentor as $user)
+                        <option value="{{ $user->id }}" @selected(old('user_id', $jadwal->user_id) == $user->id)>
+                            {{ $user->name ?? $user->username }}
+                        </option>
                     @endforeach
                 </select>
             </div>
             <div class="form-group">
+                <label>Tanggal</label>
+                <input type="date" name="tanggal" value="{{ old('tanggal', $tanggal ?? '') }}" required>
+            </div>
+            <div class="form-group">
                 <label>Jam Mulai</label>
-                <input type="time" name="jam_mulai" value="{{ old('jam_mulai', $jadwal->jam_mulai) }}" required>
+                <input type="text" name="jam_mulai" value="{{ old('jam_mulai', substr($jadwal->jam_mulai, 0, 5)) }}" required placeholder="HH:MM" pattern="^([01]\d|2[0-3]):[0-5]\d$" inputmode="numeric">
             </div>
             <div class="form-group">
                 <label>Jam Selesai</label>
-                <input type="time" name="jam_selesai" value="{{ old('jam_selesai', $jadwal->jam_selesai) }}" required>
+                <input type="text" name="jam_selesai" value="{{ old('jam_selesai', substr($jadwal->jam_selesai, 0, 5)) }}" required placeholder="HH:MM" pattern="^([01]\d|2[0-3]):[0-5]\d$" inputmode="numeric">
             </div>
             <div class="form-group">
                 <label>Keterangan</label>
