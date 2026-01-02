@@ -33,6 +33,7 @@
                     <tr>
                         <th>Alat</th>
                         <th>Tentor</th>
+                        <th>Materi</th>
                         <th>Hari &amp; Tanggal</th>
                         <th>Jam</th>
                         <th>Keterangan</th>
@@ -46,6 +47,7 @@
                         <tr>
                             <td>{{ $item->asset?->nama_aset ?? '-' }}</td>
                             <td>{{ $item->user?->name ?? $item->user?->username ?? '-' }}</td>
+                            <td>{{ $item->asset?->kategori ?? '-' }}</td>
                             <td>{{ $item->hari_tanggal ?? $item->hari }}</td>
                             <td>{{ $item->jam_mulai }} - {{ $item->jam_selesai }}</td>
                             <td>{{ $item->keterangan ?? '-' }}</td>
@@ -64,7 +66,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ auth()->user()->role === 'admin' ? 6 : 5 }}" style="text-align:center; color:var(--muted);">Belum ada jadwal.</td>
+                            <td colspan="{{ auth()->user()->role === 'admin' ? 7 : 6 }}" style="text-align:center; color:var(--muted);">Belum ada jadwal.</td>
                         </tr>
                     @endforelse
                 </tbody>
