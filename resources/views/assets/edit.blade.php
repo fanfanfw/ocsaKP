@@ -19,8 +19,22 @@
                     @endphp
                     @forelse($materi_list as $materi)
                         <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-                            <input type="checkbox" name="materi_ids[]" value="{{ $materi->id }}" @checked(in_array($materi->id, $selectedMateri))>
+                            @php
+                                $isLocked = in_array($materi->id, $lockedMateriIds ?? []);
+                                $isChecked = in_array($materi->id, $selectedMateri);
+                            @endphp
+
+                            @if($isLocked)
+                                <input type="hidden" name="materi_ids[]" value="{{ $materi->id }}">
+                                <input type="checkbox" checked disabled title="Materi ini sedang digunakan dalam jadwal">
+                            @else
+                                <input type="checkbox" name="materi_ids[]" value="{{ $materi->id }}" @checked($isChecked)>
+                            @endif
+
                             {{ $materi->nama }}
+                            @if($isLocked)
+                                <small style="color:var(--muted); font-size:0.8em;">(Terjadwal)</small>
+                            @endif
                         </label>
                     @empty
                         <p style="margin:0; color:var(--muted);">Belum ada data materi.</p>

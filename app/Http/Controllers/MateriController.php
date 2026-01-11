@@ -18,7 +18,7 @@ class MateriController extends Controller
             $query->where('nama', 'like', '%' . $request->input('q') . '%');
         }
 
-        $materi = $query->orderBy('nama')->paginate(15)->withQueryString();
+        $materi = $query->withCount(['assets', 'jadwal'])->orderBy('nama')->paginate(15)->withQueryString();
 
         return view('materi.index', [
             'materi' => $materi,
@@ -80,13 +80,7 @@ class MateriController extends Controller
      */
     public function destroy(Materi $materi)
     {
-        // Check if materi is connected to any assets
-        if ($materi->assets()->count() > 0) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Materi tidak dapat dihapus karena masih terhubung dengan alat.',
-            ], 400);
-        }
+
 
         // Check if materi is connected to any jadwal
         if ($materi->jadwal()->count() > 0) {

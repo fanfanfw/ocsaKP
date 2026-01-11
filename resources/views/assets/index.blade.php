@@ -27,7 +27,10 @@
                 <thead>
                     <tr>
                         <th>Nama Alat</th>
-                        <th>Materi</th>
+                        @if(auth()->user()->role !== 'admin')
+                            <th>Materi</th>
+                        @endif
+
                         <th>Status</th>
                         <th>Jadwal</th>
                         <th>Jumlah</th>
@@ -38,18 +41,22 @@
                     @forelse($assets as $asset)
                         @php
                             $activeLoans = $activeCounts[$asset->id] ?? 0;
-                            $available = max($asset->jumlah - $activeLoans, 0);
+                            $scheduled = $scheduledCounts[$asset->id] ?? 0;
+                            $available = max($asset->jumlah - $activeLoans - $scheduled, 0);
                             $isScheduled = in_array($asset->id, $scheduledIds ?? [], true);
                         @endphp
                         <tr>
                             <td>{{ $asset->nama_aset }}</td>
-                            <td>
-                                @if($asset->materi->count() > 0)
-                                    {{ $asset->materi->pluck('nama')->join(', ') }}
-                                @else
-                                    -
-                                @endif
-                            </td>
+                            @if(auth()->user()->role !== 'admin')
+                                <td>
+                                    @if($asset->materi->count() > 0)
+                                        {{ $asset->materi->pluck('nama')->join(', ') }}
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                            @endif
+
                             <td>
                                 @if($available <= 0)
                                     <span class="badge">Digunakan</span>
@@ -89,7 +96,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" style="text-align:center; color:var(--muted);">Belum ada data alat.</td>
+                            <td colspan="{{ auth()->user()->role === 'admin' ? 5 : 6 }}" style="text-align:center; color:var(--muted);">Belum ada data alat.</td>
                         </tr>
                     @endforelse
                 </tbody>

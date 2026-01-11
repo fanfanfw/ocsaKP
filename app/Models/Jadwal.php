@@ -19,6 +19,8 @@ class Jadwal extends Model
         'jam_mulai',
         'jam_selesai',
         'keterangan',
+        'status',
+        'asset_item_id',
     ];
 
     public $timestamps = false;
@@ -36,5 +38,10 @@ class Jadwal extends Model
     public function materi()
     {
         return $this->belongsTo(Materi::class);
+    }
+
+    public function assetItem()
+    {
+        return $this->belongsTo(AssetItem::class);
     }
 }

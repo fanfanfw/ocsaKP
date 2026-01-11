@@ -25,6 +25,14 @@ class AssetController extends Controller
         $assets = $query->orderBy('nama_aset')->paginate(15)->withQueryString();
         $scheduleStatus = app(ScheduleStatusService::class);
         $scheduledIds = $scheduleStatus->currentScheduledAssetIds();
+
+        $hari = $scheduleStatus->currentHariIndonesia();
+        $scheduledCounts = \App\Models\Jadwal::selectRaw('asset_id, COUNT(*) as total')
+            ->where('hari', $hari)
+            ->where('status', 'Terjadwal')
+            ->groupBy('asset_id')
+            ->pluck('total', 'asset_id');
+
         $activeCounts = \App\Models\Loan::selectRaw('asset_id, COUNT(*) as total')
             ->where('status', 'Dipinjam')
             ->groupBy('asset_id')
@@ -34,6 +42,7 @@ class AssetController extends Controller
             'assets' => $assets,
             'scheduledIds' => $scheduledIds,
             'activeCounts' => $activeCounts,
+            'scheduledCounts' => $scheduledCounts,
         ]);
     }
 
@@ -72,9 +81,15 @@ class AssetController extends Controller
 
     public function edit(Asset $asset)
     {
+        $lockedMateriIds = \App\Models\Jadwal::where('asset_id', $asset->id)
+            ->distinct()
+            ->pluck('materi_id')
+            ->toArray();
+
         return view('assets.edit', [
             'asset' => $asset,
             'materi_list' => \App\Models\Materi::orderBy('nama')->get(),
+            'lockedMateriIds' => $lockedMateriIds,
         ]);
     }
 

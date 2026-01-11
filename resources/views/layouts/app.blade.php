@@ -74,6 +74,12 @@
             background: rgba(232, 245, 239, 0.12);
         }
 
+        .sidebar a.active {
+            background: rgba(232, 245, 239, 0.2);
+            color: #fff;
+            font-weight: 700;
+        }
+
         .sidebar .user-info {
             color: #d3e7dd;
             font-size: 13px;
@@ -125,6 +131,11 @@
 
         .nav-links a:hover {
             background: var(--accent);
+        }
+
+        .nav-links a.active {
+            background: var(--accent);
+            color: var(--primary-dark);
         }
 
         .user-info {
@@ -303,12 +314,12 @@
         <div class="layout">
             <aside class="sidebar">
                 <div class="brand">{{ config('app.name') }}</div>
-                <a href="{{ route('dashboard') }}">Dashboard</a>
-                <a href="{{ route('assets.index') }}">Kelola Alat</a>
-                <a href="{{ route('materi.index') }}">Kelola Materi</a>
-                <a href="{{ route('jadwal.index') }}">Jadwal</a>
-                <a href="{{ route('maintenance.index') }}">Perawatan</a>
-                <a href="{{ route('reports.index') }}">Laporan</a>
+                <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>
+                <a href="{{ route('materi.index') }}" class="{{ request()->routeIs('materi.*') ? 'active' : '' }}">Kelola Materi</a>
+                <a href="{{ route('assets.index') }}" class="{{ request()->routeIs('assets.*') ? 'active' : '' }}">Kelola Alat</a>
+                <a href="{{ route('jadwal.index') }}" class="{{ request()->routeIs('jadwal.*') ? 'active' : '' }}">Jadwal</a>
+                <a href="{{ route('maintenance.index') }}" class="{{ request()->routeIs('maintenance.*') ? 'active' : '' }}">Perawatan</a>
+                <a href="{{ route('reports.index') }}" class="{{ request()->routeIs('reports.*') ? 'active' : '' }}">Laporan</a>
                 <div class="user-info">
                     <div>{{ auth()->user()->name ?? auth()->user()->username }}</div>
                     <span class="badge">{{ strtoupper(auth()->user()->role) }}</span>
@@ -341,10 +352,10 @@
             <div class="nav">
                 <div class="brand">{{ config('app.name') }}</div>
                 <div class="nav-links">
-                    <a href="{{ route('dashboard') }}">Dashboard</a>
-                    <a href="{{ route('assets.index') }}">Data Alat</a>
-                    <a href="{{ route('jadwal.index') }}">Jadwal</a>
-                    <a href="{{ route('loans.index') }}">Pengembalian Alat</a>
+                    <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>
+                    <a href="{{ route('assets.index') }}" class="{{ request()->routeIs('assets.*') ? 'active' : '' }}">Data Alat</a>
+                    <a href="{{ route('jadwal.index') }}" class="{{ request()->routeIs('jadwal.*') ? 'active' : '' }}">Jadwal</a>
+                    <a href="{{ route('loans.index') }}" class="{{ request()->routeIs('loans.*') ? 'active' : '' }}">Pengembalian Alat</a>
                 </div>
                 <div class="user-info">
                     <span>{{ auth()->user()->name ?? auth()->user()->username }}</span>

@@ -15,8 +15,6 @@ class ScheduleStatusService
     {
         $schedules = $this->currentActiveSchedules();
 
-        $this->syncScheduledLoans($schedules);
-
         return $schedules
             ->pluck('asset_id')
             ->unique()
@@ -32,6 +30,12 @@ class ScheduleStatusService
     private function currentActiveSchedules(): Collection
     {
         $hari = $this->currentHariIndonesia();
+        // Return schedules for today, regardless of time, to indicate reservation?
+        // Wait, currentScheduledAssetIds is used for BADGES "Terjadwal".
+        // If we want badges to show "Terjadwal" only during the time, keep time check.
+        // User said "without waiting realtime" for DEDUCTION.
+        // But for "Status" badge? Probably also "Terjadwal" for the whole day?
+        // Let's stick to cleaning up syncScheduledLoans first.
         $now = Carbon::now()->format('H:i:s');
 
         return Jadwal::query()
@@ -40,50 +44,6 @@ class ScheduleStatusService
             ->where('jam_mulai', '<=', $now)
             ->where('jam_selesai', '>=', $now)
             ->get();
-    }
-
-    private function syncScheduledLoans(Collection $schedules): void
-    {
-        if ($schedules->isEmpty()) {
-            return;
-        }
-
-        $today = Carbon::today();
-
-        foreach ($schedules as $jadwal) {
-            if (!$jadwal->asset || !$jadwal->user || $jadwal->user->role !== 'tentor') {
-                continue;
-            }
-
-            $startAt = $today->copy()->setTimeFromTimeString($jadwal->jam_mulai);
-            $endAt = $today->copy()->setTimeFromTimeString($jadwal->jam_selesai);
-
-            $alreadyScheduled = Loan::where('asset_id', $jadwal->asset_id)
-                ->where('user_id', $jadwal->user_id)
-                ->whereBetween('tanggal_pinjam', [$startAt, $endAt])
-                ->exists();
-
-            if ($alreadyScheduled) {
-                continue;
-            }
-
-            $activeLoans = Loan::where('asset_id', $jadwal->asset_id)
-                ->where('status', 'Dipinjam')
-                ->count();
-
-            if ($activeLoans >= $jadwal->asset->jumlah) {
-                continue;
-            }
-
-            Loan::create([
-                'user_id' => $jadwal->user_id,
-                'asset_id' => $jadwal->asset_id,
-                'tanggal_pinjam' => now(),
-                'status' => 'Dipinjam',
-            ]);
-
-            $this->syncAssetStatus($jadwal->asset);
-        }
     }
 
     public function currentHariIndonesia(): string

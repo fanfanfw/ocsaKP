@@ -37,9 +37,26 @@
                             <td>{{ $item->assets_count ?? $item->assets()->count() }}</td>
                             <td>
                                 <div class="actions">
-                                    <a class="btn btn-outline" href="{{ route('materi.edit', $item) }}">Edit</a>
-                                    <button class="btn btn-danger delete-btn" data-id="{{ $item->id }}"
-                                        data-name="{{ $item->nama }}">Hapus</button>
+                                    @php
+                                        $isScheduled = $item->jadwal_count > 0;
+                                        $isUsed = $isScheduled;
+                                    @endphp
+
+                                    @if($isScheduled)
+                                        <button class="btn btn-outline" disabled
+                                            title="Tidak bisa diedit karena sudah digunakan dalam jadwal"
+                                            style="opacity:0.5; cursor:not-allowed;">Edit</button>
+                                    @else
+                                        <a class="btn btn-outline" href="{{ route('materi.edit', $item) }}">Edit</a>
+                                    @endif
+
+                                    @if($isUsed)
+                                        <button class="btn btn-danger" disabled title="Tidak bisa dihapus karena sedang digunakan"
+                                            style="opacity:0.5; cursor:not-allowed;">Hapus</button>
+                                    @else
+                                        <button class="btn btn-danger delete-btn" data-id="{{ $item->id }}"
+                                            data-name="{{ $item->nama }}">Hapus</button>
+                                    @endif
                                 </div>
                             </td>
                         </tr>

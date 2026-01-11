@@ -122,6 +122,18 @@ class JadwalController extends Controller
         $hari = $this->hariFromDate($validated['tanggal']);
         $jumlah = (int) $request->input('jumlah', 1);
 
+        // Validation: Check availability
+        $asset = Asset::findOrFail($validated['asset_id']);
+        $currentScheduled = Jadwal::where('asset_id', $asset->id)
+            ->where('hari', $hari)
+            ->count();
+
+        if (($currentScheduled + $jumlah) > $asset->jumlah) {
+            return back()
+                ->withErrors(['jumlah' => 'Jumlah melebihi stok yang tersedia. (Total: ' . $asset->jumlah . ', Terjadwal: ' . $currentScheduled . ')'])
+                ->withInput();
+        }
+
         for ($i = 0; $i < $jumlah; $i++) {
             Jadwal::create([
                 'asset_id' => $validated['asset_id'],

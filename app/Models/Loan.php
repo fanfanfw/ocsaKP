@@ -18,6 +18,7 @@ class Loan extends Model
         'tanggal_kembali',
         'status',
         'bukti_kembali',
+        'asset_item_id',
     ];
 
     public $timestamps = false;
