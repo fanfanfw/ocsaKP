@@ -9,25 +9,15 @@
                 <label>Nama Alat</label>
                 <input type="text" name="nama_aset" value="{{ old('nama_aset') }}" required>
             </div>
-            <div class="form-group">
-                <label>Materi Terkait</label>
-                <div
-                    style="display:flex; flex-wrap:wrap; gap:10px; padding:10px; border:1px solid var(--border); border-radius:10px; background:#fff;">
-                    @forelse($materi_list as $materi)
-                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-                            <input type="checkbox" name="materi_ids[]" value="{{ $materi->id }}"
-                                @checked(is_array(old('materi_ids')) && in_array($materi->id, old('materi_ids')))>
-                            {{ $materi->nama }}
-                        </label>
-                    @empty
-                        <p style="margin:0; color:var(--muted);">Belum ada data materi. <a
-                                href="{{ route('materi.create') }}">Tambah Materi</a> dulu.</p>
-                    @endforelse
-                </div>
-            </div>
+
             <div class="form-group">
                 <label>Jumlah</label>
                 <input type="number" name="jumlah" min="1" value="{{ old('jumlah', 1) }}">
+            </div>
+            <div class="form-group">
+                <label>Kode Unit (Prefix)</label>
+                <input type="text" name="kode_unit_prefix" value="{{ old('kode_unit_prefix') }}" placeholder="Contoh: rbt" required>
+                <small style="color:var(--muted);">Otomatis dibuat menjadi rbt-1, rbt-2, dst sesuai jumlah.</small>
             </div>
             <div class="actions">
                 <button class="btn" type="submit">Simpan</button>

@@ -5,30 +5,34 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Maintenance extends Model
+class Booking extends Model
 {
     use HasFactory;
 
-    protected $table = 'maintenance';
-
     protected $fillable = [
+        'user_id',
+        'materi_id',
         'asset_id',
         'asset_item_id',
-        'deskripsi',
+        'jumlah',
         'tanggal',
-        'part',
-        'jenis_kerusakan',
-        'tingkat',
-        'tindakan',
-        'tanggal_selesai',
+        'waktu',
+        'status',
     ];
-
-    public $timestamps = false;
 
     protected $casts = [
         'tanggal' => 'date',
-        'tanggal_selesai' => 'date',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function materi()
+    {
+        return $this->belongsTo(Materi::class);
+    }
 
     public function asset()
     {
@@ -37,6 +41,6 @@ class Maintenance extends Model
 
     public function assetItem()
     {
-        return $this->belongsTo(AssetItem::class);
+        return $this->belongsTo(AssetItem::class, 'asset_item_id');
     }
 }

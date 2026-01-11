@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Asset;
+use App\Models\AssetItem;
 use App\Models\AssetStatusLog;
 use App\Services\ScheduleStatusService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class AssetController extends Controller
 {
@@ -22,35 +25,57 @@ class AssetController extends Controller
             });
         }
 
-        $assets = $query->orderBy('nama_aset')->paginate(15)->withQueryString();
+        $assets = $query
+            ->withCount([
+                'items',
+                'items as available_items_count' => function ($q) {
+                    $q->where('is_available', true);
+                },
+            ])
+            ->orderBy('nama_aset')
+            ->paginate(15)
+            ->withQueryString();
         $scheduleStatus = app(ScheduleStatusService::class);
         $scheduledIds = $scheduleStatus->currentScheduledAssetIds();
 
         $hari = $scheduleStatus->currentHariIndonesia();
-        $scheduledCounts = \App\Models\Jadwal::selectRaw('asset_id, COUNT(*) as total')
-            ->where('hari', $hari)
-            ->where('status', 'Terjadwal')
-            ->groupBy('asset_id')
-            ->pluck('total', 'asset_id');
 
+
+        $today = now()->format('Y-m-d');
+
+        // Active Loans (Real time)
         $activeCounts = \App\Models\Loan::selectRaw('asset_id, COUNT(*) as total')
             ->where('status', 'Dipinjam')
             ->groupBy('asset_id')
             ->pluck('total', 'asset_id');
 
+        // Approved Bookings for Today
+        $bookingCounts = \App\Models\Booking::selectRaw('asset_id, SUM(jumlah) as total')
+            ->where('status', 'approved')
+            ->whereDate('tanggal', $today)
+            ->groupBy('asset_id')
+            ->pluck('total', 'asset_id');
+
+        // Merge counts
+        $finalCounts = clone $activeCounts;
+        foreach ($bookingCounts as $assetId => $count) {
+            $finalCounts[$assetId] = ($finalCounts[$assetId] ?? 0) + $count;
+        }
+
+        // Pass 'activeCounts' as final counts to view (reusing variable name to avoid view changes)
+        // But better to be explicit. Let's pass $finalCounts as $activeCounts to view.
+        // View uses $activeCounts to deduct.
+
         return view('assets.index', [
             'assets' => $assets,
             'scheduledIds' => $scheduledIds,
-            'activeCounts' => $activeCounts,
-            'scheduledCounts' => $scheduledCounts,
+            'activeCounts' => $finalCounts,
         ]);
     }
 
     public function create()
     {
-        return view('assets.create', [
-            'materi_list' => \App\Models\Materi::orderBy('nama')->get(),
-        ]);
+        return view('assets.create');
     }
 
     public function store(Request $request)
@@ -58,38 +83,61 @@ class AssetController extends Controller
         $validated = $request->validate([
             'nama_aset' => ['required', 'string', 'max:255'],
             'jumlah' => ['nullable', 'integer', 'min:1'],
-            'materi_ids' => ['nullable', 'array'],
-            'materi_ids.*' => ['exists:materi,id'],
+            'kode_unit_prefix' => ['required', 'string', 'max:30'],
         ]);
 
-        $asset = Asset::create([
-            'nama_aset' => $validated['nama_aset'],
-            'status' => 'Tersedia',
-            'tahun' => null,
-            'harga' => null,
-            'jumlah' => $validated['jumlah'] ?? 1,
-        ]);
-
-        if (!empty($validated['materi_ids'])) {
-            $asset->materi()->sync($validated['materi_ids']);
+        $jumlah = (int) ($validated['jumlah'] ?? 1);
+        $prefix = Str::slug($validated['kode_unit_prefix'], '-');
+        if ($prefix === '') {
+            return back()->withErrors([
+                'kode_unit_prefix' => 'Kode Unit (Prefix) tidak valid.',
+            ])->withInput();
         }
 
-        $this->logStatus($asset, $asset->status);
+        $codes = [];
+        for ($i = 1; $i <= $jumlah; $i++) {
+            $codes[] = $prefix . '-' . $i;
+        }
+
+        $existingCodes = AssetItem::whereIn('code', $codes)->pluck('code')->all();
+        if (!empty($existingCodes)) {
+            $preview = array_slice($existingCodes, 0, 5);
+            $suffix = count($existingCodes) > 5 ? '…' : '';
+            return back()->withErrors([
+                'kode_unit_prefix' => 'Kode Unit sudah ada: ' . implode(', ', $preview) . $suffix,
+            ])->withInput();
+        }
+
+        $asset = DB::transaction(function () use ($validated, $jumlah, $codes) {
+            $asset = Asset::create([
+                'nama_aset' => $validated['nama_aset'],
+                'status' => 'Tersedia',
+                'tahun' => null,
+                'harga' => null,
+                'jumlah' => $jumlah,
+            ]);
+
+            foreach ($codes as $code) {
+                AssetItem::create([
+                    'asset_id' => $asset->id,
+                    'code' => $code,
+                    'condition' => 'Baik',
+                    'is_available' => true,
+                ]);
+            }
+
+            $this->logStatus($asset, $asset->status);
+
+            return $asset;
+        });
 
         return redirect()->route('assets.index')->with('success', 'Aset berhasil ditambahkan.');
     }
 
     public function edit(Asset $asset)
     {
-        $lockedMateriIds = \App\Models\Jadwal::where('asset_id', $asset->id)
-            ->distinct()
-            ->pluck('materi_id')
-            ->toArray();
-
         return view('assets.edit', [
             'asset' => $asset,
-            'materi_list' => \App\Models\Materi::orderBy('nama')->get(),
-            'lockedMateriIds' => $lockedMateriIds,
         ]);
     }
 
@@ -98,8 +146,6 @@ class AssetController extends Controller
         $validated = $request->validate([
             'nama_aset' => ['required', 'string', 'max:255'],
             'jumlah' => ['nullable', 'integer', 'min:1'],
-            'materi_ids' => ['nullable', 'array'],
-            'materi_ids.*' => ['exists:materi,id'],
         ]);
 
         $asset->update([
@@ -107,25 +153,10 @@ class AssetController extends Controller
             'jumlah' => $validated['jumlah'] ?? 1,
         ]);
 
-        if (isset($validated['materi_ids'])) {
-            $asset->materi()->sync($validated['materi_ids']);
-        } else {
-            // Jika array kosong tapi field ada di request (hidden input trik), sync empty
-            // Untuk amannya, kita asumsikan form selalu kirim materi_ids minimal sebagai array kosong atau tidak kirim
-            // Tapi karena checkbox HTML sifatnya kalau tidak dicentang tidak dikirim, kita perlu penanganan khusus di view.
-            // Di sini kita asumsikan kalau user kirim update, kita update relasinya.
-            // Namun, behaviour 'tidak centang semua' = 'hapus semua relasi' harus dihandle.
-            // Laravel validate nullable array akan lolos jika null/tidak ada.
-            // Kita gunakan $request->has('materi_ids') untuk cek apakah form field tersebut ada?
-            // Biasanya di view kita kasih hidden input materi_ids = [] agar selalu terkirim.
-            // Kita sync saja jika ada, atau kosongkan jika user bermaksud kosongkan.
-            // Untuk simplicity: jika key exists, sync.
-            // Mari kita pastikan di view nanti ada hidden input.
-            $asset->materi()->sync($validated['materi_ids'] ?? []);
-        }
-
         return redirect()->route('assets.index')->with('success', 'Aset berhasil diperbarui.');
     }
+
+
 
     public function destroy(Asset $asset)
     {
@@ -146,7 +177,12 @@ class AssetController extends Controller
 
     public function getAvailableItems(Asset $asset)
     {
-        $items = $asset->items()->where('is_available', true)->get(['id', 'code', 'condition']);
+        $itemsQuery = $asset->items()->orderBy('code');
+        if (!request()->boolean('all')) {
+            $itemsQuery->where('is_available', true);
+        }
+
+        $items = $itemsQuery->get(['id', 'code', 'condition', 'is_available']);
         return response()->json($items);
     }
 }

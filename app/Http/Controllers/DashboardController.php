@@ -23,12 +23,6 @@ class DashboardController extends Controller
             ->pluck('total', 'asset_id');
 
         $hari = $scheduleStatus->currentHariIndonesia();
-        $scheduledCounts = \App\Models\Jadwal::selectRaw('asset_id, COUNT(*) as total')
-            ->where('hari', $hari)
-            ->where('status', 'Terjadwal')
-            ->groupBy('asset_id')
-            ->pluck('total', 'asset_id');
-
         $statusCounts = [
             'Tersedia' => 0,
             'Terjadwal' => 0,
@@ -36,9 +30,8 @@ class DashboardController extends Controller
         ];
 
         foreach ($assets as $asset) {
-            $scheduled = $scheduledCounts[$asset->id] ?? 0;
             $active = $activeCounts[$asset->id] ?? 0;
-            $available = max($asset->jumlah - $active - $scheduled, 0);
+            $available = max($asset->jumlah - $active, 0);
 
             if ($scheduleStatus->isScheduled($asset->id, $scheduledIds)) {
                 $statusCounts['Terjadwal']++;
@@ -90,9 +83,8 @@ class DashboardController extends Controller
         // So I just need to update $available calculation.
 
         foreach ($assets as $asset) {
-            $scheduled = $scheduledCounts[$asset->id] ?? 0;
             $active = $activeCounts[$asset->id] ?? 0;
-            $available = max($asset->jumlah - $active - $scheduled, 0);
+            $available = max($asset->jumlah - $active, 0);
 
             if ($scheduleStatus->isScheduled($asset->id, $scheduledIds)) {
                 $statusCounts['Terjadwal']++;

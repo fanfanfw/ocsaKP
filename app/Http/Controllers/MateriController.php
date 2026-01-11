@@ -30,47 +30,61 @@ class MateriController extends Controller
      */
     public function create()
     {
-        return view('materi.create');
+        return view('materi.create', [
+            'assets' => \App\Models\Asset::orderBy('nama_aset')->get(),
+        ]);
     }
 
-    /**
-     * Store a newly created materi.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'nama' => ['required', 'string', 'max:255', 'unique:materi,nama'],
+            'asset_ids' => ['nullable', 'array'],
+            'asset_ids.*' => ['exists:assets,id'],
         ]);
 
-        Materi::create([
+        $materi = Materi::create([
             'nama' => $validated['nama'],
         ]);
+
+        if (!empty($validated['asset_ids'])) {
+            $materi->assets()->sync($validated['asset_ids']);
+        }
 
         return redirect()->route('materi.index')->with('success', 'Materi berhasil ditambahkan.');
     }
 
-    /**
-     * Show the form for editing the specified materi.
-     */
     public function edit(Materi $materi)
     {
+        $lockedAssetIds = \App\Models\Jadwal::where('materi_id', $materi->id)
+            ->distinct()
+            ->pluck('asset_id')
+            ->toArray();
+
         return view('materi.edit', [
             'materi' => $materi,
+            'assets' => \App\Models\Asset::orderBy('nama_aset')->get(),
+            'lockedAssetIds' => $lockedAssetIds,
         ]);
     }
 
-    /**
-     * Update the specified materi.
-     */
     public function update(Request $request, Materi $materi)
     {
         $validated = $request->validate([
             'nama' => ['required', 'string', 'max:255', 'unique:materi,nama,' . $materi->id],
+            'asset_ids' => ['nullable', 'array'],
+            'asset_ids.*' => ['exists:assets,id'],
         ]);
 
         $materi->update([
             'nama' => $validated['nama'],
         ]);
+
+        if (isset($validated['asset_ids'])) {
+            $materi->assets()->sync($validated['asset_ids']);
+        } else {
+            $materi->assets()->sync($validated['asset_ids'] ?? []);
+        }
 
         return redirect()->route('materi.index')->with('success', 'Materi berhasil diperbarui.');
     }

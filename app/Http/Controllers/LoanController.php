@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Asset;
+use App\Models\AssetItem;
 use App\Models\AssetStatusLog;
 use App\Models\Loan;
 use App\Models\User;
-use App\Services\ScheduleStatusService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -19,7 +19,7 @@ class LoanController extends Controller
             return redirect()->route('reports.index');
         }
 
-        $query = Loan::with(['asset', 'user'])->orderByDesc('tanggal_pinjam');
+        $query = Loan::with(['asset', 'item', 'user'])->orderByDesc('tanggal_pinjam');
 
         $query->where('user_id', Auth::id());
 
@@ -32,45 +32,31 @@ class LoanController extends Controller
 
     public function create(Request $request)
     {
-        $assets = Asset::orderBy('nama_aset')->get();
+        $assets = Asset::with([
+            'items' => function ($query) {
+                $query->where('is_available', true)->orderBy('code');
+            },
+        ])->orderBy('nama_aset')->get();
         $tentor = User::where('role', 'tentor')->orderBy('name')->get();
-        $selectedAssetId = $request->input('asset_id');
-        $scheduleStatus = app(ScheduleStatusService::class);
-        $scheduledIds = $scheduleStatus->currentScheduledAssetIds();
-        $activeCounts = Loan::selectRaw('asset_id, COUNT(*) as total')
-            ->where('status', 'Dipinjam')
-            ->groupBy('asset_id')
-            ->pluck('total', 'asset_id');
 
         return view('loans.create', [
             'assets' => $assets,
             'tentor' => $tentor,
-            'materi_list' => \App\Models\Materi::orderBy('nama')->get(),
-            'selectedAssetId' => $selectedAssetId,
-            'scheduledIds' => $scheduledIds,
-            'activeCounts' => $activeCounts,
         ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'asset_id' => ['required', 'exists:assets,id'],
+            'asset_item_id' => ['required', 'exists:asset_items,id'],
             'user_id' => ['nullable', 'exists:users,id'],
             'tanggal_pinjam' => ['nullable', 'date'],
         ]);
 
-        $asset = Asset::findOrFail($validated['asset_id']);
-        $scheduleStatus = app(ScheduleStatusService::class);
-        $scheduledIds = $scheduleStatus->currentScheduledAssetIds();
-        $activeLoans = Loan::where('asset_id', $asset->id)
-            ->where('status', 'Dipinjam')
-            ->count();
-        $available = $asset->jumlah - $activeLoans;
-
-        if ($available < 1) {
+        $item = AssetItem::findOrFail($validated['asset_item_id']);
+        if (!$item->is_available) {
             return back()->withErrors([
-                'asset_id' => 'Aset sedang tidak tersedia untuk dipinjam.',
+                'asset_item_id' => 'Kode Unit ini sudah tidak tersedia untuk dipinjam.',
             ])->withInput();
         }
 
@@ -81,12 +67,18 @@ class LoanController extends Controller
 
         Loan::create([
             'user_id' => $userId,
-            'asset_id' => $asset->id,
+            'asset_id' => $item->asset_id,
+            'asset_item_id' => $item->id,
             'tanggal_pinjam' => $validated['tanggal_pinjam'] ?? now(),
             'status' => 'Dipinjam',
         ]);
 
-        $this->syncAssetStatus($asset);
+        $item->update(['is_available' => false]);
+
+        $asset = $item->asset;
+        if ($asset) {
+            $this->syncAssetStatus($asset);
+        }
 
         return redirect()->route('loans.index')->with('success', 'Penggunaan berhasil dicatat.');
     }
@@ -126,6 +118,10 @@ class LoanController extends Controller
             'tanggal_kembali' => now(),
             'bukti_kembali' => $filename ?? $loan->bukti_kembali,
         ]);
+
+        if ($loan->asset_item_id) {
+            AssetItem::whereKey($loan->asset_item_id)->update(['is_available' => true]);
+        }
 
         if ($loan->asset) {
             $this->syncAssetStatus($loan->asset);

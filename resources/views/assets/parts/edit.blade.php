@@ -12,6 +12,10 @@
                 <input type="text" name="nama_part" value="{{ old('nama_part', $part->nama_part) }}" required>
             </div>
             <div class="form-group">
+                <label>Kode Unit</label>
+                <input type="text" name="kode_unit" value="{{ old('kode_unit', $part->assetItem->code ?? '') }}" required>
+            </div>
+            <div class="form-group">
                 <label>Kondisi</label>
                 <input type="text" name="kondisi" value="{{ old('kondisi', $part->kondisi) }}">
             </div>

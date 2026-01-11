@@ -17,9 +17,9 @@
                 <thead>
                     <tr>
                         <th>Aset</th>
+                        <th>Kode Unit</th>
                         <th>Tanggal</th>
                         <th>Deskripsi</th>
-                        <th>Part</th>
                         <th>Tingkat</th>
                         <th>Tanggal Selesai</th>
                         <th>Aksi</th>
@@ -29,9 +29,9 @@
                     @forelse($items as $item)
                         <tr>
                             <td>{{ $item->asset?->nama_aset ?? '-' }}</td>
+                            <td><span class="badge" style="background:#eee; color:#333;">{{ $item->assetItem?->code ?? '-' }}</span></td>
                             <td>{{ optional($item->tanggal)->format('d/m/Y') }}</td>
                             <td>{{ $item->deskripsi }}</td>
-                            <td>{{ $item->part ?? '-' }}</td>
                             <td>{{ $item->tingkat ?? '-' }}</td>
                             <td>{{ $item->tanggal_selesai ? $item->tanggal_selesai->format('d/m/Y') : '-' }}</td>
                             <td>

@@ -58,13 +58,12 @@ Route::middleware('auth')->group(function () {
         Route::put('/maintenance/{maintenance}', [MaintenanceController::class, 'update'])->name('maintenance.update');
         Route::delete('/maintenance/{maintenance}', [MaintenanceController::class, 'destroy'])->name('maintenance.destroy');
 
+
         Route::get('/assets/create', [AssetController::class, 'create'])->name('assets.create');
         Route::post('/assets', [AssetController::class, 'store'])->name('assets.store');
         Route::get('/assets/{asset}/edit', [AssetController::class, 'edit'])->name('assets.edit');
         Route::put('/assets/{asset}', [AssetController::class, 'update'])->name('assets.update');
         Route::delete('/assets/{asset}', [AssetController::class, 'destroy'])->name('assets.destroy');
-
-        Route::resource('materi', \App\Http\Controllers\MateriController::class);
 
 
         Route::get('/assets/{asset}/parts', [AssetPartController::class, 'index'])->name('assets.parts.index');
@@ -79,6 +78,10 @@ Route::middleware('auth')->group(function () {
         Route::put('/jadwal/{jadwal}', [JadwalController::class, 'update'])->name('jadwal.update');
         Route::delete('/jadwal/{jadwal}', [JadwalController::class, 'destroy'])->name('jadwal.destroy');
 
+        // Admin Approval for Bookings
+        Route::post('/bookings/{booking}/approve', [\App\Http\Controllers\BookingController::class, 'approve'])->name('bookings.approve');
+        Route::post('/bookings/{booking}/reject', [\App\Http\Controllers\BookingController::class, 'reject'])->name('bookings.reject');
+
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
@@ -91,4 +94,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports/loans', [ReportController::class, 'exportLoans'])->name('reports.loans');
         Route::get('/reports/maintenance', [ReportController::class, 'exportMaintenance'])->name('reports.maintenance');
     });
+
+    // Materi Resource (Accessible by Auth/Tentor)
+    Route::resource('materi', \App\Http\Controllers\MateriController::class);
+
+    // Tentor Booking Request Routes
+    Route::get('/bookings', [\App\Http\Controllers\BookingController::class, 'index'])->name('bookings.index');
+    Route::get('/materi/{materi}/request', [\App\Http\Controllers\BookingController::class, 'create'])->name('bookings.create');
+    Route::post('/bookings', [\App\Http\Controllers\BookingController::class, 'store'])->name('bookings.store');
 });

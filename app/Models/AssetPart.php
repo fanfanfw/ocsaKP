@@ -13,6 +13,7 @@ class AssetPart extends Model
 
     protected $fillable = [
         'asset_id',
+        'asset_item_id',
         'nama_part',
         'kondisi',
         'jumlah',
@@ -24,5 +25,10 @@ class AssetPart extends Model
     public function asset()
     {
         return $this->belongsTo(Asset::class);
+    }
+
+    public function assetItem()
+    {
+        return $this->belongsTo(AssetItem::class);
     }
 }

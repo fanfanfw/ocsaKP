@@ -14,6 +14,7 @@
                 <thead>
                     <tr>
                         <th>Alat</th>
+                        <th>Kode Unit</th>
                         <th>Tanggal Digunakan</th>
                         <th>Tanggal Kembali</th>
                         <th>Status</th>
@@ -24,6 +25,7 @@
                     @forelse($loans as $loan)
                         <tr>
                             <td>{{ $loan->asset?->nama_aset ?? '-' }}</td>
+                            <td><span class="badge" style="background:#eee; color:#333;">{{ $loan->item?->code ?? '-' }}</span></td>
                             <td>{{ optional($loan->tanggal_pinjam)->format('d/m/Y H:i') }}</td>
                             <td>{{ $loan->tanggal_kembali ? $loan->tanggal_kembali->format('d/m/Y H:i') : '-' }}</td>
                             <td><span class="badge">{{ $loan->status === 'Dipinjam' ? 'Digunakan' : $loan->status }}</span></td>

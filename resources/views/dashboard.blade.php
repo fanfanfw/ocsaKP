@@ -43,7 +43,7 @@
                 tersedia: {{ (int) ($statusCounts['Tersedia'] ?? 0) }},
                 terjadwal: {{ (int) ($statusCounts['Terjadwal'] ?? 0) }},
                 digunakan: {{ (int) ($statusCounts['Dipinjam'] ?? 0) }}
-                    };
+                            };
 
             const labels = ['Tersedia', 'Terjadwal', 'Digunakan'];
             const values = [statusData.tersedia, statusData.terjadwal, statusData.digunakan];
@@ -78,7 +78,6 @@
                     <thead>
                         <tr>
                             <th>Nama Alat</th>
-                            <th>Materi</th>
                             <th>Status</th>
                             <th>Jadwal</th>
                             <th>Jumlah</th>
@@ -88,16 +87,9 @@
                         @forelse($assets as $asset)
                             <tr>
                                 <td>{{ $asset->nama_aset }}</td>
-                                <td>
-                                    @if($asset->materi->count() > 0)
-                                        {{ $asset->materi->pluck('nama')->join(', ') }}
-                                    @else
-                                        -
-                                    @endif
-                                </td>
                                 @php
                                     $activeLoans = $activeCounts[$asset->id] ?? 0;
-                                    $available = max($asset->jumlah - $activeLoans, 0);
+                                    $available = max($asset->jumlah - $activeLoans, 0); 
                                     $isScheduled = in_array($asset->id, $scheduledIds ?? [], true);
                                 @endphp
                                 <td>
@@ -118,7 +110,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" style="text-align:center; color:var(--muted);">Belum ada data alat.</td>
+                                <td colspan="4" style="text-align:center; color:var(--muted);">Belum ada data alat.</td>
                             </tr>
                         @endforelse
                     </tbody>

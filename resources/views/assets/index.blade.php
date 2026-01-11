@@ -27,36 +27,25 @@
                 <thead>
                     <tr>
                         <th>Nama Alat</th>
-                        @if(auth()->user()->role !== 'admin')
-                            <th>Materi</th>
-                        @endif
-
                         <th>Status</th>
                         <th>Jadwal</th>
                         <th>Jumlah</th>
-                        <th>Aksi</th>
+                        @if(auth()->user()->role === 'admin')
+                            <th>Aksi</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($assets as $asset)
-                        @php
-                            $activeLoans = $activeCounts[$asset->id] ?? 0;
-                            $scheduled = $scheduledCounts[$asset->id] ?? 0;
-                            $available = max($asset->jumlah - $activeLoans - $scheduled, 0);
-                            $isScheduled = in_array($asset->id, $scheduledIds ?? [], true);
-                        @endphp
+	                    @forelse($assets as $asset)
+	                        @php
+	                            $activeLoans = $activeCounts[$asset->id] ?? 0;
+	                            $available = $asset->items_count > 0
+	                                ? (int) $asset->available_items_count
+	                                : max($asset->jumlah - $activeLoans, 0);
+	                            $isScheduled = in_array($asset->id, $scheduledIds ?? [], true);
+	                        @endphp
                         <tr>
                             <td>{{ $asset->nama_aset }}</td>
-                            @if(auth()->user()->role !== 'admin')
-                                <td>
-                                    @if($asset->materi->count() > 0)
-                                        {{ $asset->materi->pluck('nama')->join(', ') }}
-                                    @else
-                                        -
-                                    @endif
-                                </td>
-                            @endif
-
                             <td>
                                 @if($available <= 0)
                                     <span class="badge">Digunakan</span>
@@ -72,31 +61,24 @@
                                 @endif
                             </td>
                             <td>{{ $available }}</td>
-                            <td>
-                                @if(auth()->user()->role === 'admin')
-                                    <div class="actions">
-                                        <a class="btn btn-outline" href="{{ route('assets.parts.index', $asset) }}">Part</a>
-                                        <a class="btn btn-outline" href="{{ route('assets.edit', $asset) }}">Edit</a>
-                                        <form method="POST" action="{{ route('assets.destroy', $asset) }}"
-                                            onsubmit="return confirm('Hapus alat ini?')">
-                                            @csrf
+	                            @if(auth()->user()->role === 'admin')
+	                                <td>
+	                                    <div class="actions">
+	                                        <a class="btn btn-outline" href="{{ route('assets.parts.index', $asset) }}">Detail</a>
+	                                        <a class="btn btn-outline" href="{{ route('assets.edit', $asset) }}">Edit</a>
+	                                        <form method="POST" action="{{ route('assets.destroy', $asset) }}"
+	                                            onsubmit="return confirm('Hapus alat ini?')">
+	                                            @csrf
                                             @method('DELETE')
                                             <button class="btn btn-danger" type="submit">Hapus</button>
                                         </form>
                                     </div>
-                                @else
-                                    @if($available > 0)
-                                        <a class="btn btn-outline"
-                                            href="{{ route('loans.create', ['asset_id' => $asset->id]) }}">Gunakan Alat</a>
-                                    @else
-                                        <span style="color:var(--muted);">Tidak tersedia</span>
-                                    @endif
-                                @endif
-                            </td>
+                                </td>
+                            @endif
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ auth()->user()->role === 'admin' ? 5 : 6 }}" style="text-align:center; color:var(--muted);">Belum ada data alat.</td>
+                            <td colspan="{{ auth()->user()->role === 'admin' ? 5 : 4 }}" style="text-align:center; color:var(--muted);">Belum ada data alat.</td>
                         </tr>
                     @endforelse
                 </tbody>

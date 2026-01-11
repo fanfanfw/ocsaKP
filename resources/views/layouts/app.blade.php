@@ -314,12 +314,25 @@
         <div class="layout">
             <aside class="sidebar">
                 <div class="brand">{{ config('app.name') }}</div>
-                <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>
-                <a href="{{ route('materi.index') }}" class="{{ request()->routeIs('materi.*') ? 'active' : '' }}">Kelola Materi</a>
-                <a href="{{ route('assets.index') }}" class="{{ request()->routeIs('assets.*') ? 'active' : '' }}">Kelola Alat</a>
-                <a href="{{ route('jadwal.index') }}" class="{{ request()->routeIs('jadwal.*') ? 'active' : '' }}">Jadwal</a>
-                <a href="{{ route('maintenance.index') }}" class="{{ request()->routeIs('maintenance.*') ? 'active' : '' }}">Perawatan</a>
-                <a href="{{ route('reports.index') }}" class="{{ request()->routeIs('reports.*') ? 'active' : '' }}">Laporan</a>
+                <a href="{{ route('dashboard') }}"
+                    class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>
+                <a href="{{ route('materi.index') }}" class="{{ request()->routeIs('materi.*') ? 'active' : '' }}">Kelola
+                    Materi</a>
+                <a href="{{ route('assets.index') }}" class="{{ request()->routeIs('assets.*') ? 'active' : '' }}">Kelola
+                    Alat</a>
+                <a href="{{ route('jadwal.index') }}"
+                    class="{{ request()->routeIs('jadwal.*') ? 'active' : '' }}">Jadwal</a>
+                <a href="{{ route('bookings.index') }}"
+                    class="{{ request()->routeIs('bookings.*') ? 'active' : '' }}">Approval Peminjaman
+                    @if ($pendingApprovalsCount > 0)
+                        <span class="badge"
+                            style="background:#c93a3a; color:#fff; border-radius:12px; padding:2px 8px; font-size:11px; margin-left:8px;">{{ $pendingApprovalsCount }}</span>
+                    @endif
+                </a>
+                <a href="{{ route('maintenance.index') }}"
+                    class="{{ request()->routeIs('maintenance.*') ? 'active' : '' }}">Perawatan</a>
+                <a href="{{ route('reports.index') }}"
+                    class="{{ request()->routeIs('reports.*') ? 'active' : '' }}">Laporan</a>
                 <div class="user-info">
                     <div>{{ auth()->user()->name ?? auth()->user()->username }}</div>
                     <span class="badge">{{ strtoupper(auth()->user()->role) }}</span>
@@ -352,10 +365,23 @@
             <div class="nav">
                 <div class="brand">{{ config('app.name') }}</div>
                 <div class="nav-links">
-                    <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>
-                    <a href="{{ route('assets.index') }}" class="{{ request()->routeIs('assets.*') ? 'active' : '' }}">Data Alat</a>
-                    <a href="{{ route('jadwal.index') }}" class="{{ request()->routeIs('jadwal.*') ? 'active' : '' }}">Jadwal</a>
-                    <a href="{{ route('loans.index') }}" class="{{ request()->routeIs('loans.*') ? 'active' : '' }}">Pengembalian Alat</a>
+                    <a href="{{ route('dashboard') }}"
+                        class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>
+                    <a href="{{ route('materi.index') }}" class="{{ request()->routeIs('materi.*') ? 'active' : '' }}">Data
+                        Materi</a>
+                    <a href="{{ route('bookings.index') }}"
+                        class="{{ request()->routeIs('bookings.*') ? 'active' : '' }}">Riwayat Pengajuan</a>
+                    <a href="{{ route('assets.index') }}" class="{{ request()->routeIs('assets.*') ? 'active' : '' }}">Data
+                        Alat</a>
+                    <a href="{{ route('jadwal.index') }}"
+                        class="{{ request()->routeIs('jadwal.*') ? 'active' : '' }}">Jadwal
+                        @if ($pendingReceivalCount > 0)
+                            <span class="badge"
+                                style="background:#c93a3a; color:#fff; border-radius:12px; padding:2px 6px; font-size:11px; margin-left:4px;">{{ $pendingReceivalCount }}</span>
+                        @endif
+                    </a>
+                    <a href="{{ route('loans.index') }}"
+                        class="{{ request()->routeIs('loans.*') ? 'active' : '' }}">Pengembalian Alat</a>
                 </div>
                 <div class="user-info">
                     <span>{{ auth()->user()->name ?? auth()->user()->username }}</span>
