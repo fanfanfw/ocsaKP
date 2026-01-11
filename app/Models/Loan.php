@@ -32,6 +32,11 @@ class Loan extends Model
         return $this->belongsTo(Asset::class);
     }
 
+    public function item()
+    {
+        return $this->belongsTo(AssetItem::class, 'asset_item_id');
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

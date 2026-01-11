@@ -13,7 +13,6 @@ class Asset extends Model
 
     protected $fillable = [
         'nama_aset',
-        'kategori',
         'status',
         'tahun',
         'harga',
@@ -21,6 +20,19 @@ class Asset extends Model
     ];
 
     public $timestamps = false;
+
+    /**
+     * Get the materi associated with this asset.
+     */
+    public function materi()
+    {
+        return $this->belongsToMany(Materi::class, 'asset_materi', 'asset_id', 'materi_id');
+    }
+
+    public function items()
+    {
+        return $this->hasMany(AssetItem::class);
+    }
 
     public function parts()
     {

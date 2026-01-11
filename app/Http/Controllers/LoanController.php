@@ -45,6 +45,7 @@ class LoanController extends Controller
         return view('loans.create', [
             'assets' => $assets,
             'tentor' => $tentor,
+            'materi_list' => \App\Models\Materi::orderBy('nama')->get(),
             'selectedAssetId' => $selectedAssetId,
             'scheduledIds' => $scheduledIds,
             'activeCounts' => $activeCounts,

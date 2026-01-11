@@ -6,13 +6,24 @@
         <form method="POST" action="{{ route('jadwal.store') }}">
             @csrf
             <div class="form-group">
-                <label>Alat</label>
-                <select name="asset_id" required>
-                    <option value="">Pilih Alat</option>
-                    @foreach($assets as $asset)
-                        <option value="{{ $asset->id }}" @selected(old('asset_id') == $asset->id)>{{ $asset->nama_aset }}</option>
+                <label>Materi</label>
+                <select name="materi_id" id="materi_id" required>
+                    <option value="">Pilih Materi</option>
+                    @foreach($materi_list as $materi)
+                        <option value="{{ $materi->id }}" @selected(old('materi_id') == $materi->id)>{{ $materi->nama }}</option>
                     @endforeach
                 </select>
+            </div>
+            <div class="form-group">
+                <label>Alat</label>
+                <select name="asset_id" id="asset_id" required disabled>
+                    <option value="">Pilih Materi terlebih dahulu</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Jumlah Unit</label>
+                <input type="number" name="jumlah" value="1" min="1" required>
+                <small style="color:var(--muted)">Akan membuat jadwal terpisah untuk setiap unit.</small>
             </div>
             <div class="form-group">
                 <label>Tentor</label>
@@ -31,11 +42,13 @@
             </div>
             <div class="form-group">
                 <label>Jam Mulai</label>
-                <input type="text" name="jam_mulai" value="{{ old('jam_mulai') }}" required placeholder="HH:MM" pattern="^([01]\d|2[0-3]):[0-5]\d$" inputmode="numeric">
+                <input type="text" name="jam_mulai" value="{{ old('jam_mulai') }}" required placeholder="HH:MM"
+                    pattern="^([01]\d|2[0-3]):[0-5]\d$" inputmode="numeric">
             </div>
             <div class="form-group">
                 <label>Jam Selesai</label>
-                <input type="text" name="jam_selesai" value="{{ old('jam_selesai') }}" required placeholder="HH:MM" pattern="^([01]\d|2[0-3]):[0-5]\d$" inputmode="numeric">
+                <input type="text" name="jam_selesai" value="{{ old('jam_selesai') }}" required placeholder="HH:MM"
+                    pattern="^([01]\d|2[0-3]):[0-5]\d$" inputmode="numeric">
             </div>
             <div class="form-group">
                 <label>Keterangan</label>
@@ -47,4 +60,51 @@
             </div>
         </form>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const materiSelect = document.getElementById('materi_id');
+            const assetSelect = document.getElementById('asset_id');
+
+            // Function to load assets
+            function loadAssets(materiId, selectedAssetId = null) {
+                assetSelect.innerHTML = '<option value="">Loading...</option>';
+                assetSelect.disabled = true;
+
+                if (materiId) {
+                    fetch(`/api/materi/${materiId}/assets`)
+                        .then(response => response.json())
+                        .then(data => {
+                            assetSelect.innerHTML = '<option value="">Pilih Alat</option>';
+                            if (data.length === 0) {
+                                assetSelect.innerHTML = '<option value="">Tidak ada alat untuk materi ini</option>';
+                            }
+                            data.forEach(asset => {
+                                const isSelected = selectedAssetId == asset.id ? 'selected' : '';
+                                assetSelect.innerHTML += `<option value="${asset.id}" ${isSelected}>${asset.nama_aset}</option>`;
+                            });
+                            assetSelect.disabled = false;
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            assetSelect.innerHTML = '<option value="">Gagal memuat alat</option>';
+                        });
+                } else {
+                    assetSelect.innerHTML = '<option value="">Pilih Materi terlebih dahulu</option>';
+                    assetSelect.disabled = true;
+                }
+            }
+
+            materiSelect.addEventListener('change', function () {
+                loadAssets(this.value);
+            });
+
+            // Trigger if old value exists (e.g. after validation error)
+            const oldMateriId = "{{ old('materi_id') }}";
+            const oldAssetId = "{{ old('asset_id') }}";
+
+            if (oldMateriId) {
+                loadAssets(oldMateriId, oldAssetId);
+            }
+        });
+    </script>
 @endsection

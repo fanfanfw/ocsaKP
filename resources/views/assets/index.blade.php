@@ -43,7 +43,13 @@
                         @endphp
                         <tr>
                             <td>{{ $asset->nama_aset }}</td>
-                            <td>{{ $asset->kategori ?? '-' }}</td>
+                            <td>
+                                @if($asset->materi->count() > 0)
+                                    {{ $asset->materi->pluck('nama')->join(', ') }}
+                                @else
+                                    -
+                                @endif
+                            </td>
                             <td>
                                 @if($available <= 0)
                                     <span class="badge">Digunakan</span>
@@ -64,7 +70,8 @@
                                     <div class="actions">
                                         <a class="btn btn-outline" href="{{ route('assets.parts.index', $asset) }}">Part</a>
                                         <a class="btn btn-outline" href="{{ route('assets.edit', $asset) }}">Edit</a>
-                                        <form method="POST" action="{{ route('assets.destroy', $asset) }}" onsubmit="return confirm('Hapus alat ini?')">
+                                        <form method="POST" action="{{ route('assets.destroy', $asset) }}"
+                                            onsubmit="return confirm('Hapus alat ini?')">
                                             @csrf
                                             @method('DELETE')
                                             <button class="btn btn-danger" type="submit">Hapus</button>
@@ -72,7 +79,8 @@
                                     </div>
                                 @else
                                     @if($available > 0)
-                                        <a class="btn btn-outline" href="{{ route('loans.create', ['asset_id' => $asset->id]) }}">Gunakan Alat</a>
+                                        <a class="btn btn-outline"
+                                            href="{{ route('loans.create', ['asset_id' => $asset->id]) }}">Gunakan Alat</a>
                                     @else
                                         <span style="color:var(--muted);">Tidak tersedia</span>
                                     @endif

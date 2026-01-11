@@ -45,6 +45,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/loans/{loan}/return', [LoanController::class, 'returnForm'])->name('loans.return');
     Route::post('/loans/{loan}/return', [LoanController::class, 'processReturn'])->name('loans.processReturn');
 
+    Route::get('/api/materi/{materi}/assets', [\App\Http\Controllers\MateriController::class, 'getAssets'])->name('api.materi.assets');
+
+    Route::get('/api/assets/{asset}/items', [\App\Http\Controllers\AssetController::class, 'getAvailableItems'])->name('api.assets.items');
+    Route::post('/jadwal/{jadwal}/confirm', [\App\Http\Controllers\JadwalController::class, 'confirm'])->name('jadwal.confirm');
+
     Route::middleware('role:admin')->group(function () {
         Route::get('/maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');
         Route::get('/maintenance/create', [MaintenanceController::class, 'create'])->name('maintenance.create');
@@ -58,6 +63,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/assets/{asset}/edit', [AssetController::class, 'edit'])->name('assets.edit');
         Route::put('/assets/{asset}', [AssetController::class, 'update'])->name('assets.update');
         Route::delete('/assets/{asset}', [AssetController::class, 'destroy'])->name('assets.destroy');
+
+        Route::resource('materi', \App\Http\Controllers\MateriController::class);
+
 
         Route::get('/assets/{asset}/parts', [AssetPartController::class, 'index'])->name('assets.parts.index');
         Route::post('/assets/{asset}/parts', [AssetPartController::class, 'store'])->name('assets.parts.store');

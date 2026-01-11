@@ -10,8 +10,20 @@
                 <input type="text" name="nama_aset" value="{{ old('nama_aset') }}" required>
             </div>
             <div class="form-group">
-                <label>Kategori</label>
-                <input type="text" name="kategori" value="{{ old('kategori') }}">
+                <label>Materi Terkait</label>
+                <div
+                    style="display:flex; flex-wrap:wrap; gap:10px; padding:10px; border:1px solid var(--border); border-radius:10px; background:#fff;">
+                    @forelse($materi_list as $materi)
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                            <input type="checkbox" name="materi_ids[]" value="{{ $materi->id }}"
+                                @checked(is_array(old('materi_ids')) && in_array($materi->id, old('materi_ids')))>
+                            {{ $materi->nama }}
+                        </label>
+                    @empty
+                        <p style="margin:0; color:var(--muted);">Belum ada data materi. <a
+                                href="{{ route('materi.create') }}">Tambah Materi</a> dulu.</p>
+                    @endforelse
+                </div>
             </div>
             <div class="form-group">
                 <label>Jumlah</label>

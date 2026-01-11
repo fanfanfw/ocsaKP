@@ -14,6 +14,7 @@ class Jadwal extends Model
     protected $fillable = [
         'asset_id',
         'user_id',
+        'materi_id',
         'hari',
         'jam_mulai',
         'jam_selesai',
@@ -30,5 +31,10 @@ class Jadwal extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function materi()
+    {
+        return $this->belongsTo(Materi::class);
     }
 }

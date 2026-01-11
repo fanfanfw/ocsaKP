@@ -39,25 +39,31 @@ class AssetController extends Controller
 
     public function create()
     {
-        return view('assets.create');
+        return view('assets.create', [
+            'materi_list' => \App\Models\Materi::orderBy('nama')->get(),
+        ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
             'nama_aset' => ['required', 'string', 'max:255'],
-            'kategori' => ['nullable', 'string', 'max:100'],
             'jumlah' => ['nullable', 'integer', 'min:1'],
+            'materi_ids' => ['nullable', 'array'],
+            'materi_ids.*' => ['exists:materi,id'],
         ]);
 
         $asset = Asset::create([
             'nama_aset' => $validated['nama_aset'],
-            'kategori' => $validated['kategori'] ?? null,
             'status' => 'Tersedia',
             'tahun' => null,
             'harga' => null,
             'jumlah' => $validated['jumlah'] ?? 1,
         ]);
+
+        if (!empty($validated['materi_ids'])) {
+            $asset->materi()->sync($validated['materi_ids']);
+        }
 
         $this->logStatus($asset, $asset->status);
 
@@ -68,6 +74,7 @@ class AssetController extends Controller
     {
         return view('assets.edit', [
             'asset' => $asset,
+            'materi_list' => \App\Models\Materi::orderBy('nama')->get(),
         ]);
     }
 
@@ -75,15 +82,32 @@ class AssetController extends Controller
     {
         $validated = $request->validate([
             'nama_aset' => ['required', 'string', 'max:255'],
-            'kategori' => ['nullable', 'string', 'max:100'],
             'jumlah' => ['nullable', 'integer', 'min:1'],
+            'materi_ids' => ['nullable', 'array'],
+            'materi_ids.*' => ['exists:materi,id'],
         ]);
 
         $asset->update([
             'nama_aset' => $validated['nama_aset'],
-            'kategori' => $validated['kategori'] ?? null,
             'jumlah' => $validated['jumlah'] ?? 1,
         ]);
+
+        if (isset($validated['materi_ids'])) {
+            $asset->materi()->sync($validated['materi_ids']);
+        } else {
+            // Jika array kosong tapi field ada di request (hidden input trik), sync empty
+            // Untuk amannya, kita asumsikan form selalu kirim materi_ids minimal sebagai array kosong atau tidak kirim
+            // Tapi karena checkbox HTML sifatnya kalau tidak dicentang tidak dikirim, kita perlu penanganan khusus di view.
+            // Di sini kita asumsikan kalau user kirim update, kita update relasinya.
+            // Namun, behaviour 'tidak centang semua' = 'hapus semua relasi' harus dihandle.
+            // Laravel validate nullable array akan lolos jika null/tidak ada.
+            // Kita gunakan $request->has('materi_ids') untuk cek apakah form field tersebut ada?
+            // Biasanya di view kita kasih hidden input materi_ids = [] agar selalu terkirim.
+            // Kita sync saja jika ada, atau kosongkan jika user bermaksud kosongkan.
+            // Untuk simplicity: jika key exists, sync.
+            // Mari kita pastikan di view nanti ada hidden input.
+            $asset->materi()->sync($validated['materi_ids'] ?? []);
+        }
 
         return redirect()->route('assets.index')->with('success', 'Aset berhasil diperbarui.');
     }
@@ -102,5 +126,12 @@ class AssetController extends Controller
             'status' => $status,
             'updated_at' => now(),
         ]);
+    }
+
+
+    public function getAvailableItems(Asset $asset)
+    {
+        $items = $asset->items()->where('is_available', true)->get(['id', 'code', 'condition']);
+        return response()->json($items);
     }
 }

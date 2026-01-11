@@ -19,19 +19,6 @@
                 </div>
             @endif
             <div class="form-group">
-                <label>Alat</label>
-                <select name="asset_id" required>
-                    <option value="">Pilih Alat</option>
-                    @foreach($assets as $asset)
-                        @php
-                            $activeLoans = $activeCounts[$asset->id] ?? 0;
-                            $available = max($asset->jumlah - $activeLoans, 0);
-                            $isScheduled = in_array($asset->id, $scheduledIds ?? [], true);
-                            $disabled = $available <= 0;
-                            $note = $isScheduled ? 'Terjadwal, Tersedia: ' . $available : 'Tersedia: ' . $available;
-                        @endphp
-                        <option value="{{ $asset->id }}" @selected(old('asset_id', $selectedAssetId) == $asset->id) @disabled($disabled)>
-                            {{ $asset->nama_aset }} ({{ $note }})
                         </option>
                     @endforeach
                 </select>
@@ -47,4 +34,56 @@
             </div>
         </form>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const materiSelect = document.getElementById('materi_id');
+            const assetSelect = document.getElementById('asset_id');
+
+            // Function to load assets
+            function loadAssets(materiId, selectedAssetId = null) {
+                assetSelect.innerHTML = '<option value="">Loading...</option>';
+                assetSelect.disabled = true;
+
+                if (materiId) {
+                    fetch(`/api/materi/${materiId}/assets`)
+                        .then(response => response.json())
+                        .then(data => {
+                            assetSelect.innerHTML = '<option value="">Pilih Alat</option>';
+                            if (data.length === 0) {
+                                assetSelect.innerHTML = '<option value="">Tidak ada alat untuk materi ini</option>';
+                            }
+                            data.forEach(asset => {
+                                const isSelected = selectedAssetId == asset.id ? 'selected' : '';
+                                assetSelect.innerHTML += `<option value="${asset.id}" ${isSelected}>${asset.nama_aset}</option>`;
+                            });
+                            assetSelect.disabled = false;
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            assetSelect.innerHTML = '<option value="">Gagal memuat alat</option>';
+                        });
+                } else {
+                    assetSelect.innerHTML = '<option value="">Pilih Materi terlebih dahulu</option>';
+                    assetSelect.disabled = true;
+                }
+            }
+
+            materiSelect.addEventListener('change', function() {
+                loadAssets(this.value);
+            });
+
+            // Initial load
+            @php
+                // Re-calculate or pass variable from view
+                // We computed $initialMateriId inside the loop block which is scoped? No, blade @php is fine.
+                // But let's just use the JS value from the select element if possible, or re-echo.
+            @endphp
+            const currentMateriId = "{{ $initialMateriId }}";
+            const currentAssetId = "{{ old('asset_id', $selectedAssetId) }}";
+            
+            if (currentMateriId) {
+                loadAssets(currentMateriId, currentAssetId);
+            }
+        });
+    </script>
 @endsection

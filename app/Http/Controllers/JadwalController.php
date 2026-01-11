@@ -99,6 +99,7 @@ class JadwalController extends Controller
         return view('jadwal.create', [
             'assets' => Asset::orderBy('nama_aset')->get(),
             'tentor' => User::where('role', 'tentor')->orderBy('name')->get(),
+            'materi_list' => \App\Models\Materi::orderBy('nama')->get(),
         ]);
     }
 
@@ -106,6 +107,7 @@ class JadwalController extends Controller
     {
         $validated = $request->validate([
             'asset_id' => ['required', 'exists:assets,id'],
+            'materi_id' => ['required', 'exists:materi,id'],
             'user_id' => [
                 'required',
                 Rule::exists('users', 'id')->where('role', 'tentor'),
@@ -114,18 +116,23 @@ class JadwalController extends Controller
             'jam_mulai' => ['required', 'date_format:H:i'],
             'jam_selesai' => ['required', 'date_format:H:i', 'after:jam_mulai'],
             'keterangan' => ['nullable', 'string', 'max:255'],
+            'jumlah' => ['nullable', 'integer', 'min:1'],
         ]);
 
         $hari = $this->hariFromDate($validated['tanggal']);
+        $jumlah = (int) $request->input('jumlah', 1);
 
-        Jadwal::create([
-            'asset_id' => $validated['asset_id'],
-            'user_id' => $validated['user_id'],
-            'hari' => $hari,
-            'jam_mulai' => $validated['jam_mulai'],
-            'jam_selesai' => $validated['jam_selesai'],
-            'keterangan' => $validated['keterangan'] ?? null,
-        ]);
+        for ($i = 0; $i < $jumlah; $i++) {
+            Jadwal::create([
+                'asset_id' => $validated['asset_id'],
+                'materi_id' => $validated['materi_id'],
+                'user_id' => $validated['user_id'],
+                'hari' => $hari,
+                'jam_mulai' => $validated['jam_mulai'],
+                'jam_selesai' => $validated['jam_selesai'],
+                'keterangan' => $validated['keterangan'] ?? null,
+            ]);
+        }
 
         return redirect()->route('jadwal.index')->with('success', 'Jadwal berhasil ditambahkan.');
     }
@@ -136,6 +143,7 @@ class JadwalController extends Controller
             'jadwal' => $jadwal,
             'assets' => Asset::orderBy('nama_aset')->get(),
             'tentor' => User::where('role', 'tentor')->orderBy('name')->get(),
+            'materi_list' => \App\Models\Materi::orderBy('nama')->get(),
             'tanggal' => $this->dateFromHari($jadwal->hari),
         ]);
     }
@@ -144,6 +152,7 @@ class JadwalController extends Controller
     {
         $validated = $request->validate([
             'asset_id' => ['required', 'exists:assets,id'],
+            'materi_id' => ['required', 'exists:materi,id'],
             'user_id' => [
                 'required',
                 Rule::exists('users', 'id')->where('role', 'tentor'),
@@ -158,6 +167,7 @@ class JadwalController extends Controller
 
         $jadwal->update([
             'asset_id' => $validated['asset_id'],
+            'materi_id' => $validated['materi_id'],
             'user_id' => $validated['user_id'],
             'hari' => $hari,
             'jam_mulai' => $validated['jam_mulai'],
@@ -173,5 +183,39 @@ class JadwalController extends Controller
         $jadwal->delete();
 
         return redirect()->route('jadwal.index')->with('success', 'Jadwal berhasil dihapus.');
+    }
+
+
+    public function confirm(Request $request, Jadwal $jadwal)
+    {
+        $request->validate([
+            'asset_item_id' => 'required|exists:asset_items,id',
+        ]);
+
+        $item = \App\Models\AssetItem::findOrFail($request->asset_item_id);
+
+        if (!$item->is_available) {
+            return back()->with('error', 'Alat pilih sudah tidak tersedia.');
+        }
+
+        // Update Jadwal
+        $jadwal->update([
+            'status' => 'Diterima',
+            'asset_item_id' => $item->id
+        ]);
+
+        // Create Loan Record
+        \App\Models\Loan::create([
+            'user_id' => auth()->id(),
+            'asset_id' => $jadwal->asset_id,
+            'asset_item_id' => $item->id,
+            'tanggal_pinjam' => now(),
+            'status' => 'Dipinjam'
+        ]);
+
+        // Mark item as unavailable
+        $item->update(['is_available' => false]);
+
+        return back()->with('success', 'Alat berhasil diterima.');
     }
 }
